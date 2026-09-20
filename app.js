@@ -6,7 +6,7 @@
 // ==========================================================================
 // 1. MENU DATABASE (30+ Authentic Subbayya Gari Specialties)
 // ==========================================================================
-const MENU_DATA = [
+let MENU_DATA = [
   // --- MEALS, CURRIES & SIDES (AUTHENTIC GODAVARI RATE CARD) ---
   {
     id: 'meal-butta',
@@ -1706,6 +1706,8 @@ document.addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
   initStorage();
   renderMenuGrid();
+  loadLiveMenuFromAPI();
+  loadLiveStoreSettings();
   setupUnboxInteractivity();
   setupCateringCalculator();
   renderBranches('all');
@@ -1752,6 +1754,7 @@ function renderMenuGrid() {
   menuContainer.innerHTML = filteredItems.map(item => {
     const cartItem = AppState.cart.find(c => c.id === item.id);
     const qty = cartItem ? cartItem.qty : 0;
+    const isAvailable = item.isAvailable !== false;
 
     let spiceBadge = '';
     if (item.spiceLevel === 'mild') spiceBadge = '<span class="food-spice-level mild">🟢 Mild</span>';
@@ -1759,12 +1762,13 @@ function renderMenuGrid() {
     else if (item.spiceLevel === 'spicy') spiceBadge = '<span class="food-spice-level spicy">🔴 Andhra Spicy</span>';
 
     return `
-      <div class="food-card" data-id="${item.id}">
+      <div class="food-card" data-id="${item.id}" style="${!isAvailable ? 'opacity: 0.6;' : ''}">
         <div class="food-card-image-wrap">
           <img src="${item.image}" alt="${item.name}" loading="lazy" />
           <div class="card-top-badges">
             <div class="pure-veg-symbol" title="100% Pure Vegetarian"></div>
             ${item.isBestseller ? '<span class="badge badge-gold">⭐ Godavari Classic</span>' : ''}
+            ${!isAvailable ? '<span class="badge" style="background:#EF4444; color:#FFF; font-weight:800;">🔴 Out of Stock</span>' : ''}
           </div>
         </div>
 
@@ -1783,7 +1787,11 @@ function renderMenuGrid() {
               ${item.originalPrice ? `<span style="font-size: 0.8rem; text-decoration: line-through; color: var(--color-text-subtle); margin-left: 4px;">₹${item.originalPrice}</span>` : ''}
             </div>
 
-            ${qty === 0 ? `
+            ${!isAvailable ? `
+              <button class="btn btn-secondary btn-sm" disabled style="opacity: 0.6; cursor: not-allowed;">
+                <span>Out of Stock</span>
+              </button>
+            ` : qty === 0 ? `
               <button class="btn btn-primary btn-sm" onclick="addToCart('${item.id}')">
                 <span>Add +</span>
               </button>
@@ -2514,7 +2522,7 @@ function saveDeliveryLocationModal(e) {
 }
 window.saveDeliveryLocationModal = saveDeliveryLocationModal;
 
-function proceedToCheckout() {
+async function proceedToCheckout() {
   if (AppState.cart.length === 0) {
     showToast('⚠️ Your cart is empty. Add dishes to proceed!');
     return;
@@ -2522,6 +2530,7 @@ function proceedToCheckout() {
   
   const customerName = document.getElementById('order-customer-name')?.value.trim();
   const customerPhone = document.getElementById('order-customer-phone')?.value.trim();
+  const customerEmail = AppState.currentUser?.email || '';
   const isDelivery = AppState.orderType === 'delivery';
 
   if (!customerName) {
@@ -2558,86 +2567,99 @@ function proceedToCheckout() {
   }
 
   const activeBranchObj = BRANCHES_DATA.find(b => b.id === AppState.selectedBranch) || BRANCHES_DATA[0];
-
-  const subtotal = AppState.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const packagingFee = 30;
   const exactKm = AppState.deliveryExactKm || AppState.deliveryDistanceKm || 2;
-  // Delivery charge calculation: 2km <= 30rs, then ₹10/km
-  const deliveryFee = isDelivery ? calculateDeliveryFee(exactKm) : 0;
-  
-  let discount = 0;
-  if (AppState.appliedPromo === 'BUTTA10') {
-    discount = Math.round(subtotal * 0.10);
-  }
 
-  const grandTotal = subtotal + packagingFee + deliveryFee - discount;
-  
-  // Format WhatsApp Order Message
-  let message = `*🌿 SUBBAYYA GARI HOTEL - NEW ORDER*%0A`;
-  message += `👤 *Customer Name:* ${encodeURIComponent(customerName)}%0A`;
-  message += `📞 *Phone / WhatsApp:* ${encodeURIComponent(customerPhone)}%0A`;
-  
-  if (!isDelivery) {
-    message += `📦 *Order Type:* 🥡 RESTAURANT PICKUP / TAKEAWAY%0A`;
-    message += `🏢 *Pickup Outlet:* ${encodeURIComponent(activeBranchObj.name)}%0A`;
-    message += `📍 *Outlet Address:* ${encodeURIComponent(activeBranchObj.address)}%0A`;
-    message += `⏰ *Pickup Schedule:* ${encodeURIComponent(pickupSlot)}%0A`;
-    if (vehicleNote) {
-      message += `🚗 *Vehicle / Handover Note:* ${encodeURIComponent(vehicleNote)}%0A`;
-    }
-    message += `🛵 *Delivery Fee:* FREE (Self Pickup)%0A`;
-  } else {
-    message += `📦 *Order Type:* 🛵 HOME DELIVERY (${exactKm} km — ₹30 for ≤2km + ₹10/km)%0A`;
-    message += `🏢 *Serving Branch:* ${encodeURIComponent(activeBranchObj.name)}%0A`;
-    if (deliveryAddress) {
-      message += `🏠 *Delivery Address:* ${encodeURIComponent(deliveryAddress)}%0A`;
-    }
-    if (deliveryLandmark) {
-      message += `🚩 *Landmark:* ${encodeURIComponent(deliveryLandmark)}%0A`;
-    }
-    if (gpsMapUrl) {
-      message += `📍 *Exact Google Maps Live Location:* ${encodeURIComponent(gpsMapUrl)}%0A`;
-    }
-    message += `🛵 *Delivery Charges:* ₹${deliveryFee} (${exactKm} km — ₹30 for ≤2km + ₹10/km)%0A`;
-  }
-
-  message += `%0A*📋 ORDER DETAILS:*%0A`;
-  
-  AppState.cart.forEach((item, idx) => {
-    message += `${idx + 1}. ${item.name} x ${item.qty} = ₹${item.price * item.qty}%0A`;
-  });
-
-  message += `%0A*💰 Item Total:* ₹${subtotal}%0A`;
-  message += `*🍃 Packaging (Banana Leaf & Butta):* ₹${packagingFee}%0A`;
-  if (isDelivery) {
-    message += `*🛵 Delivery Charges:* ₹${deliveryFee} (${exactKm} km)%0A`;
-  }
-  if (discount > 0) {
-    message += `*🎉 Godavari Promo:* -₹${discount}%0A`;
-  }
-  message += `*⭐ Grand Total:* ₹${grandTotal}%0A%0A`;
-  message += `_Packing: Authentic Traditional Banana Leaf & Eco Butta_%0A`;
-  message += `_Thank you for ordering with Subbayya Gari Godavari Bhojanam!_`;
-
-  // Close Cart and show simulated live order ticket
-  toggleCart(false);
-  showOrderConfirmationModal(customerName, customerPhone, message, {
+  // Prepare database order payload
+  const orderPayload = {
+    customerName,
+    phone: customerPhone,
+    email: customerEmail,
     orderType: AppState.orderType,
-    branchName: activeBranchObj.name,
-    branchAddress: activeBranchObj.address,
-    pickupSlot: pickupSlot,
+    items: AppState.cart.map(item => ({
+      id: item.id,
+      _id: item._id,
+      name: item.name,
+      price: item.price,
+      quantity: item.qty,
+      image: item.image,
+      category: item.category
+    })),
+    deliveryAddress: {
+      address: deliveryAddress,
+      landmark: deliveryLandmark,
+      locationUrl: gpsMapUrl,
+      distanceKm: exactKm
+    },
+    pickupTime: pickupSlot,
     vehicleNote: vehicleNote,
-    address: deliveryAddress,
-    landmark: deliveryLandmark,
-    locationUrl: gpsMapUrl
-  });
+    branch: activeBranchObj.name,
+    appliedPromo: AppState.appliedPromo,
+    paymentMethod: 'UPI'
+  };
+
+  const checkoutBtn = document.getElementById('btn-checkout-submit');
+  if (checkoutBtn) {
+    checkoutBtn.disabled = true;
+    checkoutBtn.innerHTML = '<span>⏳ Saving Order to Kitchen Database...</span>';
+  }
+
+  try {
+    const response = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderPayload)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      showToast(`⚠️ ${result.message || 'Unable to place order. Please try again.'}`);
+      if (checkoutBtn) {
+        checkoutBtn.disabled = false;
+        checkoutBtn.innerHTML = '<span>Proceed to Complete Order 🚀</span>';
+      }
+      return;
+    }
+
+    const createdOrder = result.data;
+
+    // Format WhatsApp Order Message
+    let message = `*🌿 SUBBAYYA GARI HOTEL - NEW ORDER #${createdOrder.orderNumber}*%0A`;
+    message += `👤 *Customer Name:* ${encodeURIComponent(customerName)}%0A`;
+    message += `📞 *Phone / WhatsApp:* ${encodeURIComponent(customerPhone)}%0A`;
+    message += `📦 *Order Type:* ${encodeURIComponent(createdOrder.orderType.toUpperCase())}%0A`;
+    message += `💰 *Grand Total:* ₹${createdOrder.totalAmount}%0A%0A`;
+    message += `_Thank you for ordering with Subbayya Gari Godavari Bhojanam!_`;
+
+    toggleCart(false);
+    showOrderConfirmationModal(customerName, customerPhone, message, {
+      orderId: createdOrder.orderNumber,
+      orderType: createdOrder.orderType,
+      branchName: activeBranchObj.name,
+      branchAddress: activeBranchObj.address,
+      pickupSlot: pickupSlot,
+      vehicleNote: vehicleNote,
+      address: deliveryAddress,
+      landmark: deliveryLandmark,
+      locationUrl: gpsMapUrl
+    });
+
+  } catch (error) {
+    console.error('Checkout error:', error);
+    showToast('⚠️ Network connection error placing order. Please try again.');
+  } finally {
+    if (checkoutBtn) {
+      checkoutBtn.disabled = false;
+      checkoutBtn.innerHTML = '<span>Proceed to Complete Order 🚀</span>';
+    }
+  }
 }
 
 function showOrderConfirmationModal(name, phone, whatsappMsg, details = {}) {
   const modal = document.getElementById('order-confirmation-modal');
   if (!modal) return;
 
-  const orderId = 'SGH-' + Math.floor(100000 + Math.random() * 900000);
+  const orderId = details.orderId || ('SGH-' + Math.floor(10000 + Math.random() * 90000));
   document.getElementById('conf-order-id').textContent = orderId;
   document.getElementById('conf-customer-name').textContent = name;
   document.getElementById('conf-branch').textContent = (details.branchName || AppState.selectedBranch).toUpperCase();
@@ -2683,6 +2705,181 @@ function showOrderConfirmationModal(name, phone, whatsappMsg, details = {}) {
   AppState.customerLocation = null;
   saveCart();
   renderMenuGrid();
+}
+
+// Live Menu & Settings sync from MongoDB
+async function loadLiveMenuFromAPI() {
+  try {
+    const res = await fetch('/api/menu');
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.data && json.data.length > 0) {
+        MENU_DATA = json.data.map(item => ({
+          id: item.itemId || item._id,
+          _id: item._id,
+          name: item.name,
+          telugu: item.telugu || '',
+          category: item.category,
+          price: item.price,
+          originalPrice: item.originalPrice,
+          rating: item.rating || 4.8,
+          reviews: item.reviews || 120,
+          spiceLevel: item.spiceLevel || 'medium',
+          dietary: item.dietary || [],
+          isBestseller: Boolean(item.isBestseller),
+          isSpecial: Boolean(item.isSpecial),
+          isAvailable: item.isAvailable !== false,
+          image: item.image,
+          description: item.description
+        }));
+        renderMenuGrid();
+      }
+    }
+  } catch (e) {
+    console.log('Using cached menu data:', e);
+  }
+}
+
+async function loadLiveStoreSettings() {
+  try {
+    const res = await fetch('/api/settings');
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.data) {
+        const s = json.data;
+        if (!s.isOpen) {
+          const bar = document.querySelector('.announcement-bar');
+          if (bar) {
+            bar.style.background = '#EF4444';
+            bar.innerHTML = `<div><strong>🔴 NOTICE:</strong> ${s.closedMessage || 'Subbayya Gari Hotel is currently closed for new orders.'}</div>`;
+          }
+        }
+      }
+    }
+  } catch (e) {}
+}
+
+// Live Customer Order Tracking
+let customerSocket = null;
+let activeTrackingOrderNumber = null;
+
+function promptTrackOrder() {
+  const orderNum = prompt('Enter your Subbayya Gari Order Number (e.g. SGH-10001):');
+  if (orderNum && orderNum.trim()) {
+    openLiveOrderTracking(orderNum.trim());
+  }
+}
+window.promptTrackOrder = promptTrackOrder;
+
+async function openLiveOrderTracking(orderNumber) {
+  if (!orderNumber) return;
+  const cleanNumber = orderNumber.replace(/^#/, '').trim().toUpperCase();
+  activeTrackingOrderNumber = cleanNumber;
+
+  const modal = document.getElementById('order-tracking-modal');
+  if (!modal) return;
+
+  document.getElementById('track-modal-number').textContent = `#${cleanNumber}`;
+  modal.classList.add('active');
+
+  try {
+    const res = await fetch(`/api/orders/track/${cleanNumber}`);
+    const result = await res.json();
+
+    if (res.ok && result.success) {
+      renderLiveTrackingDetails(result.data);
+      initCustomerTrackingSocket(cleanNumber);
+    } else {
+      document.getElementById('track-current-status-title').textContent = 'Order Not Found';
+      document.getElementById('track-current-status-note').textContent = result.message || 'Please check your order number and try again.';
+      document.getElementById('track-modal-stages').innerHTML = '';
+    }
+  } catch (e) {
+    console.error('Tracking fetch error:', e);
+  }
+}
+window.openLiveOrderTracking = openLiveOrderTracking;
+
+function closeLiveOrderTracking() {
+  const modal = document.getElementById('order-tracking-modal');
+  if (modal) modal.classList.remove('active');
+}
+window.closeLiveOrderTracking = closeLiveOrderTracking;
+
+function renderLiveTrackingDetails(order) {
+  document.getElementById('track-modal-cust-name').textContent = order.customerName;
+  document.getElementById('track-modal-type').textContent = order.orderType === 'delivery' ? '🛵 Delivery' : '🥡 Takeaway';
+  document.getElementById('track-modal-total').textContent = `₹${order.totalAmount}`;
+  
+  const itemsContainer = document.getElementById('track-modal-items-list');
+  if (itemsContainer && order.items) {
+    itemsContainer.innerHTML = order.items.map(i => `<div>• ${i.name} × ${i.quantity} = ₹${i.subtotal}</div>`).join('');
+  }
+
+  // Stages definition
+  const stages = [
+    { key: 'Pending', label: 'Placed', icon: '📝' },
+    { key: 'Accepted', label: 'Accepted', icon: '✅' },
+    { key: 'Preparing', label: 'Kitchen', icon: '👨‍🍳' },
+    { key: 'Ready', label: 'Packed', icon: '🛍️' },
+    { key: order.orderType === 'delivery' ? 'Out for Delivery' : 'Completed', label: order.orderType === 'delivery' ? 'On Way' : 'Done', icon: order.orderType === 'delivery' ? '🛵' : '🎉' }
+  ];
+
+  const currentStatus = order.orderStatus;
+  document.getElementById('track-current-status-title').textContent = currentStatus;
+
+  let note = 'Your order has been recorded in the kitchen.';
+  if (currentStatus === 'Accepted') note = 'The hotel manager has accepted your order!';
+  if (currentStatus === 'Preparing') note = 'Authentic dishes are being simmered and packed in eco-friendly banana leaves.';
+  if (currentStatus === 'Ready') note = 'Your feast is packed hot with fresh pure ghee and ready for handover!';
+  if (currentStatus === 'Out for Delivery') note = 'Our delivery captain is on the way to your address!';
+  if (currentStatus === 'Completed') note = 'Order completed. Enjoy your legendary Godavari Feast!';
+  if (currentStatus === 'Cancelled') note = 'This order was cancelled.';
+  document.getElementById('track-current-status-note').textContent = note;
+
+  // Render stages progress bar
+  const stagesIndex = {
+    'Pending': 0,
+    'Accepted': 1,
+    'Preparing': 2,
+    'Ready': 3,
+    'Out for Delivery': 4,
+    'Completed': 4
+  };
+
+  const currentIdx = stagesIndex[currentStatus] !== undefined ? stagesIndex[currentStatus] : 0;
+
+  const stagesHtml = stages.map((s, idx) => {
+    const isDone = idx <= currentIdx;
+    const isCurrent = idx === currentIdx;
+    return `
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; z-index: 2;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; background: ${isDone ? 'var(--color-primary)' : 'var(--color-surface-muted)'}; color: ${isDone ? '#FFF' : 'var(--color-text-muted)'}; border: 2px solid ${isCurrent ? 'var(--color-gold)' : (isDone ? 'var(--color-primary)' : 'var(--color-border)')}; box-shadow: ${isCurrent ? '0 0 10px var(--color-gold)' : 'none'}; transition: all 0.3s;">
+          ${s.icon}
+        </div>
+        <span style="font-size: 0.68rem; font-weight: 700; color: ${isDone ? 'var(--color-primary)' : 'var(--color-text-muted)'};">${s.label}</span>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('track-modal-stages').innerHTML = stagesHtml;
+}
+
+function initCustomerTrackingSocket(orderNumber) {
+  if (typeof io !== 'undefined' && !customerSocket) {
+    customerSocket = io();
+    customerSocket.on('connect', () => {
+      customerSocket.emit('join_order_tracking', orderNumber);
+    });
+    customerSocket.on('order_status_updated', (data) => {
+      if (data && (data.orderNumber === activeTrackingOrderNumber || data.orderNumber === orderNumber)) {
+        openLiveOrderTracking(activeTrackingOrderNumber);
+        showToast(`🔔 Order #${data.orderNumber} status updated to: ${data.orderStatus}`);
+      }
+    });
+  } else if (customerSocket) {
+    customerSocket.emit('join_order_tracking', orderNumber);
+  }
 }
 
 // ==========================================================================
@@ -2795,32 +2992,87 @@ function setupReservationForm() {
     });
   });
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const name = document.getElementById('res-name').value;
-    const phone = document.getElementById('res-phone').value;
+    const name = document.getElementById('res-name').value.trim();
+    const phone = document.getElementById('res-phone').value.trim();
     const branch = document.getElementById('res-branch').value;
     const date = document.getElementById('res-date').value;
     const timeSlot = document.getElementById('res-time').value;
-    const guests = document.getElementById('res-guests').value;
-    const notes = document.getElementById('res-notes').value || 'Standard Pure Veg Bhojanam';
+    const guests = parseInt(document.getElementById('res-guests').value || '1', 10);
+    const notes = document.getElementById('res-notes').value || 'Authentic Pure Veg Bhojanam Reservation';
 
-    const bookingRef = 'TKT-' + Math.floor(100000 + Math.random() * 900000);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn ? submitBtn.innerHTML : 'Confirm Booking';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>⏳ Reserving Table...</span>';
+    }
 
-    // Show Confirmation Ticket Modal
-    document.getElementById('pass-booking-ref').textContent = bookingRef;
-    document.getElementById('pass-guest-name').textContent = name;
-    document.getElementById('pass-branch').textContent = branch;
-    document.getElementById('pass-date-time').textContent = `${date} at ${timeSlot}`;
-    document.getElementById('pass-guests-count').textContent = `${guests} Guests (${selectedSeating})`;
-    document.getElementById('pass-notes').textContent = notes;
+    try {
+      // Build order payload for Dine-In / Table Booking
+      const reservationPayload = {
+        customerName: name,
+        phone: phone,
+        orderType: 'dine-in',
+        branch: branch,
+        guestsCount: guests,
+        reservationDate: date,
+        reservationTime: timeSlot,
+        seatingPreference: selectedSeating,
+        pickupTime: `${date} at ${timeSlot}`,
+        notes: `${notes} (${selectedSeating}, ${guests} Guests)`,
+        paymentMethod: 'Pay at Hotel',
+        items: [
+          {
+            name: `Traditional Andhra Bhojanam (Table Reservation - ${selectedSeating})`,
+            telugu: 'సుబ్బయ్య గారి రాయల్ భోజనం',
+            price: 299,
+            quantity: guests,
+            category: 'Meals',
+          },
+        ],
+      };
 
-    const modal = document.getElementById('reservation-pass-modal');
-    if (modal) modal.classList.add('active');
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reservationPayload),
+      });
 
-    showToast(`Table booked successfully for ${name}! 🎉`);
-    form.reset();
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        const orderNumber = data.data.orderNumber;
+
+        // Show Confirmation Ticket Modal
+        document.getElementById('pass-booking-ref').textContent = orderNumber;
+        document.getElementById('pass-guest-name').textContent = name;
+        document.getElementById('pass-branch').textContent = branch;
+        document.getElementById('pass-date-time').textContent = `${date} at ${timeSlot}`;
+        document.getElementById('pass-guests-count').textContent = `${guests} Guests (${selectedSeating})`;
+        document.getElementById('pass-notes').textContent = notes;
+
+        const modal = document.getElementById('reservation-pass-modal');
+        if (modal) modal.classList.add('active');
+
+        showToast(`Table booked successfully #${orderNumber} for ${name}! 🎉`);
+        form.reset();
+      } else {
+        showToast(data.message || 'Error reserving table. Please try again.', 'error');
+      }
+    } catch (err) {
+      console.error('Reservation error:', err);
+      showToast('Network error while booking table. Please try again.', 'error');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+      }
+    }
   });
 }
 

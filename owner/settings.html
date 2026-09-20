@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restaurant Settings | Subbayya Gari Hotel</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👑</text></svg>" />
+  <link rel="stylesheet" href="css/owner.css" />
+</head>
+<body>
+
+  <div class="admin-layout">
+    
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+      <a href="dashboard.html" class="sidebar-brand">
+        <div class="brand-emblem">సు</div>
+        <div class="brand-info">
+          <span class="brand-name">SUBBAYYA GARI</span>
+          <span class="brand-tag">ESTD 1950 • OWNER</span>
+        </div>
+      </a>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Main Management</div>
+        <a href="dashboard.html" class="nav-item">
+          <span class="nav-icon">🏠</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="orders.html" class="nav-item">
+          <span class="nav-icon">🧾</span>
+          <span>All Orders</span>
+        </a>
+        <a href="orders.html?type=dine-in" class="nav-item" style="padding-left: 28px;">
+          <span class="nav-icon">🍽️</span>
+          <span>Table Bookings</span>
+        </a>
+        <a href="orders.html?type=delivery" class="nav-item" style="padding-left: 28px;">
+          <span class="nav-icon">🛵</span>
+          <span>Delivery Orders</span>
+        </a>
+        <a href="orders.html?type=takeaway" class="nav-item" style="padding-left: 28px;">
+          <span class="nav-icon">🥡</span>
+          <span>Takeaway Orders</span>
+        </a>
+        <a href="menu.html" class="nav-item">
+          <span class="nav-icon">🍛</span>
+          <span>Menu Items</span>
+        </a>
+        <a href="customers.html" class="nav-item">
+          <span class="nav-icon">👥</span>
+          <span>Customers</span>
+        </a>
+
+        <div class="nav-section-title">Analytics & Config</div>
+        <a href="reports.html" class="nav-item">
+          <span class="nav-icon">📊</span>
+          <span>Reports & Sales</span>
+        </a>
+        <a href="settings.html" class="nav-item active">
+          <span class="nav-icon">⚙️</span>
+          <span>Restaurant Settings</span>
+        </a>
+        <a href="/" target="_blank" class="nav-item">
+          <span class="nav-icon">🌐</span>
+          <span>Customer Website ↗</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="owner-profile">
+          <div class="owner-avatar" id="owner-avatar-letter">O</div>
+          <div class="owner-info">
+            <span class="owner-name" id="owner-user-name">Owner</span>
+            <span class="owner-role">Hotel Administrator</span>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="logoutOwner()" title="Logout">🚪</button>
+      </div>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="admin-main">
+      
+      <!-- HEADER -->
+      <header class="admin-header">
+        <div class="header-left">
+          <button class="mobile-menu-toggle" onclick="toggleMobileSidebar()">☰</button>
+          <div class="page-title-box">
+            <h1>Restaurant Settings</h1>
+            <p>Operational status, charges, timings, and contact configuration</p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div id="store-status-display" class="status-badge" style="font-size: 0.85rem; padding: 6px 14px;">
+            Loading status...
+          </div>
+        </div>
+      </header>
+
+      <!-- CONTENT -->
+      <main class="admin-content">
+        
+        <form id="settings-form">
+          
+          <!-- LIVE STORE STATUS CARD -->
+          <div class="card" style="margin-bottom: 24px; border-color: rgba(245, 158, 11, 0.4);">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Live Kitchen & Ordering Status</h2>
+                <span class="card-subtitle">Control whether customers can place new orders</span>
+              </div>
+            </div>
+
+            <div class="form-row" style="align-items: center;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="switch-label" style="font-size: 1rem;">
+                  <label class="switch">
+                    <input type="checkbox" id="sett-is-open" />
+                    <span class="slider"></span>
+                  </label>
+                  <span>Accept New Customer Orders (Store Open)</span>
+                </label>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="sett-closed-msg">Closed Banner Message for Customers</label>
+                <input type="text" id="sett-closed-msg" class="form-control" placeholder="Subbayya Gari Hotel is currently closed..." />
+              </div>
+            </div>
+          </div>
+
+          <!-- RESTAURANT INFORMATION -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h2 class="card-title">Hotel Profile & Helplines</h2>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="sett-name">Restaurant Name</label>
+                <input type="text" id="sett-name" class="form-control" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="sett-tagline">Heritage Tagline</label>
+                <input type="text" id="sett-tagline" class="form-control" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="sett-phone">Helpline / WhatsApp Order Phone</label>
+                <input type="text" id="sett-phone" class="form-control" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="sett-email">Support Email</label>
+                <input type="email" id="sett-email" class="form-control" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="sett-address">Main Outlet Address</label>
+              <textarea id="sett-address" class="form-control" rows="2"></textarea>
+            </div>
+          </div>
+
+          <!-- TIMINGS & CHARGES -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h2 class="card-title">Operating Hours & Fulfillment Charges</h2>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="sett-open-time">Opening Time</label>
+                <input type="text" id="sett-open-time" class="form-control" placeholder="11:00 AM" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="sett-close-time">Closing Time</label>
+                <input type="text" id="sett-close-time" class="form-control" placeholder="11:00 PM" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="sett-delivery-base">Base Delivery Fee (for ≤ 2 km) (₹)</label>
+                <input type="number" id="sett-delivery-base" class="form-control" min="0" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="sett-delivery-per-km">Delivery Fee Per Extra Km (₹)</label>
+                <input type="number" id="sett-delivery-per-km" class="form-control" min="0" required />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="sett-packaging">Eco Banana Leaf & Butta Packaging Fee (₹)</label>
+                <input type="number" id="sett-packaging" class="form-control" min="0" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="sett-tax">GST / Tax Percentage (%)</label>
+                <input type="number" id="sett-tax" class="form-control" min="0" max="100" />
+              </div>
+            </div>
+          </div>
+
+          <!-- UPI DIGITAL PAYMENTS -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h2 class="card-title">UPI Digital Payments Information</h2>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="sett-upi-id">UPI VPA ID</label>
+                <input type="text" id="sett-upi-id" class="form-control" placeholder="e.g. subbayyahotel@icici" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="sett-upi-payee">UPI Payee Business Name</label>
+                <input type="text" id="sett-upi-payee" class="form-control" placeholder="Subbayya Gari Hotel KPHB" />
+              </div>
+            </div>
+          </div>
+
+          <!-- SAVE ACTION -->
+          <div style="text-align: right; margin-bottom: 40px;">
+            <button type="submit" class="btn btn-primary" style="padding: 14px 28px; font-size: 1rem;">
+              💾 Save All Restaurant Settings
+            </button>
+          </div>
+
+        </form>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/settings.js"></script>
+</body>
+</html>

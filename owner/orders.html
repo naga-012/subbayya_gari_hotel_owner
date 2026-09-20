@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Orders | Subbayya Gari Hotel</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👑</text></svg>" />
+  <link rel="stylesheet" href="css/owner.css" />
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+  <div class="admin-layout">
+    
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+      <a href="dashboard.html" class="sidebar-brand">
+        <div class="brand-emblem">సు</div>
+        <div class="brand-info">
+          <span class="brand-name">SUBBAYYA GARI</span>
+          <span class="brand-tag">ESTD 1950 • OWNER</span>
+        </div>
+      </a>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Main Management</div>
+        <a href="dashboard.html" class="nav-item">
+          <span class="nav-icon">🏠</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="orders.html" class="nav-item active" id="nav-all-orders">
+          <span class="nav-icon">🧾</span>
+          <span>All Orders</span>
+        </a>
+        <a href="orders.html?type=dine-in" class="nav-item" id="nav-table-orders" style="padding-left: 28px;">
+          <span class="nav-icon">🍽️</span>
+          <span>Table Bookings</span>
+        </a>
+        <a href="orders.html?type=delivery" class="nav-item" id="nav-delivery-orders" style="padding-left: 28px;">
+          <span class="nav-icon">🛵</span>
+          <span>Delivery Orders</span>
+        </a>
+        <a href="orders.html?type=takeaway" class="nav-item" id="nav-takeaway-orders" style="padding-left: 28px;">
+          <span class="nav-icon">🥡</span>
+          <span>Takeaway Orders</span>
+        </a>
+        <a href="menu.html" class="nav-item">
+          <span class="nav-icon">🍛</span>
+          <span>Menu Items</span>
+        </a>
+        <a href="customers.html" class="nav-item">
+          <span class="nav-icon">👥</span>
+          <span>Customers</span>
+        </a>
+
+        <div class="nav-section-title">Analytics & Config</div>
+        <a href="reports.html" class="nav-item">
+          <span class="nav-icon">📊</span>
+          <span>Reports & Sales</span>
+        </a>
+        <a href="settings.html" class="nav-item">
+          <span class="nav-icon">⚙️</span>
+          <span>Restaurant Settings</span>
+        </a>
+        <a href="/" target="_blank" class="nav-item">
+          <span class="nav-icon">🌐</span>
+          <span>Customer Website ↗</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="owner-profile">
+          <div class="owner-avatar" id="owner-avatar-letter">O</div>
+          <div class="owner-info">
+            <span class="owner-name" id="owner-user-name">Owner</span>
+            <span class="owner-role">Hotel Administrator</span>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="logoutOwner()" title="Logout">🚪</button>
+      </div>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="admin-main">
+      
+      <!-- HEADER -->
+      <header class="admin-header">
+        <div class="header-left">
+          <button class="mobile-menu-toggle" onclick="toggleMobileSidebar()">☰</button>
+          <div class="page-title-box">
+            <h1 id="orders-page-title">Customer Orders</h1>
+            <p id="orders-page-subtitle">Live order pipeline & status management</p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <button id="audio-toggle-btn" class="audio-toggle-btn" onclick="toggleAudioNotification()">
+            🔔 Sound ON
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="exportOrdersToCSV()">
+            📥 Export to CSV
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT -->
+      <main class="admin-content">
+        
+        <!-- SEPARATED ORDER CATEGORY TABS -->
+        <div class="order-tabs-wrapper">
+          <button class="order-tab-btn active" data-type="all" onclick="setOrderTypeTab('all', this)">
+            <span>📋 All Orders</span>
+            <span class="tab-badge" id="badge-all">0</span>
+          </button>
+          <button class="order-tab-btn" data-type="dine-in" onclick="setOrderTypeTab('dine-in', this)">
+            <span>🍽️ Table Bookings</span>
+            <span class="tab-badge" id="badge-dinein">0</span>
+          </button>
+          <button class="order-tab-btn" data-type="delivery" onclick="setOrderTypeTab('delivery', this)">
+            <span>🛵 Home Delivery</span>
+            <span class="tab-badge" id="badge-delivery">0</span>
+          </button>
+          <button class="order-tab-btn" data-type="takeaway" onclick="setOrderTypeTab('takeaway', this)">
+            <span>🥡 Takeaway / Parcel</span>
+            <span class="tab-badge" id="badge-takeaway">0</span>
+          </button>
+        </div>
+
+        <!-- FILTER CONTROLS BAR -->
+        <div class="filter-bar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-orders" class="search-input" placeholder="Search by Order ID, Customer Name, Phone, Table..." />
+          </div>
+
+          <div class="filter-group">
+            <!-- STATUS FILTER -->
+            <select id="filter-status" class="filter-select">
+              <option value="all">All Statuses (All Orders)</option>
+              <option value="active">⚡ Not Completed / In-Progress</option>
+              <option value="Pending">⏳ Pending</option>
+              <option value="Accepted">✅ Accepted</option>
+              <option value="Preparing">👨‍🍳 Preparing</option>
+              <option value="Ready">🛍️ Ready</option>
+              <option value="Out for Delivery">🛵 Out for Delivery</option>
+              <option value="Completed">🎉 Completed</option>
+              <option value="Cancelled">❌ Cancelled</option>
+              <option value="Rejected">🚫 Rejected</option>
+            </select>
+
+            <!-- ORDER TYPE FILTER -->
+            <select id="filter-type" class="filter-select">
+              <option value="all">All Channels</option>
+              <option value="dine-in">🍽️ Table Bookings</option>
+              <option value="delivery">🛵 Home Delivery</option>
+              <option value="takeaway">🥡 Takeaway</option>
+            </select>
+
+            <!-- PAYMENT STATUS FILTER -->
+            <select id="filter-payment" class="filter-select">
+              <option value="all">All Payments</option>
+              <option value="Paid">🟢 Paid</option>
+              <option value="Pending">🟡 Payment Pending</option>
+              <option value="Failed">🔴 Failed</option>
+              <option value="Refunded">🟣 Refunded</option>
+            </select>
+
+            <!-- DATE FILTER -->
+            <select id="filter-date" class="filter-select">
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="7days">Last 7 Days</option>
+              <option value="30days">Last 30 Days</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ORDERS CARD & TABLE -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title" id="table-card-title">Order Records</h2>
+              <span class="card-subtitle" id="table-card-subtitle">Showing matching orders from database</span>
+            </div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-gold);">
+              Showing: <span id="orders-total-count">0</span> Orders
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead id="orders-thead">
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Date & Time</th>
+                  <th>Type</th>
+                  <th>Items Snapshot</th>
+                  <th>Amount</th>
+                  <th>Payment</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="orders-tbody">
+                <tr>
+                  <td colspan="9" style="text-align: center; padding: 40px; color: var(--color-text-muted);">
+                    Loading orders...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/orders.js"></script>
+</body>
+</html>

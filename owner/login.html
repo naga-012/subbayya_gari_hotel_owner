@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Owner Login | Subbayya Gari Hotel</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👑</text></svg>" />
+  <link rel="stylesheet" href="css/owner.css" />
+  <style>
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top right, #1E293B, #0F172A);
+      padding: 20px;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+      background: #1E293B;
+      border: 1px solid var(--color-card-border);
+      border-radius: var(--radius-lg);
+      padding: 36px 32px;
+      box-shadow: var(--shadow-lg), 0 0 25px rgba(245, 158, 11, 0.15);
+    }
+    .login-brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .login-emblem {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-gold));
+      border-radius: var(--radius-md);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFF;
+      font-size: 1.8rem;
+      font-weight: 800;
+      box-shadow: 0 6px 16px rgba(194, 65, 12, 0.4);
+      margin-bottom: 12px;
+    }
+    .demo-credentials {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px dashed rgba(245, 158, 11, 0.4);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-top: 20px;
+      font-size: 0.78rem;
+      color: var(--color-text-sub);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="login-emblem">సు</div>
+        <h1 style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--color-text-main);">SUBBAYYA GARI HOTEL</h1>
+        <p style="color: var(--color-gold); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px;">Owner & Admin Management Portal</p>
+      </div>
+
+      <div id="login-error" style="display: none; background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 10px; border-radius: var(--radius-md); font-size: 0.85rem; margin-bottom: 16px; text-align: center;"></div>
+
+      <form id="owner-login-form">
+        <div class="form-group">
+          <label class="form-label" for="login-email">Owner Email / Username</label>
+          <input type="email" id="login-email" class="form-control" placeholder="myakalanagarjun09@gmail.com" required autocomplete="username" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+
+        <button type="submit" id="btn-login-submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px; font-size: 0.95rem;">
+          🔑 Secure Owner Login
+        </button>
+      </form>
+
+      <div class="demo-credentials">
+        <div style="font-weight: 700; color: var(--color-gold); margin-bottom: 4px;">👑 Owner Credentials:</div>
+        <div><strong>Name:</strong> G. Subbayya</div>
+        <div><strong>Email:</strong> myakalanagarjun09@gmail.com</div>
+        <div><strong>Phone:</strong> 9121792433</div>
+        <div><strong>Password:</strong> 123456</div>
+      </div>
+
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="/" style="color: var(--color-text-muted); text-decoration: none; font-size: 0.82rem;">
+          ← Back to Customer Feast & Ordering
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>
+    document.getElementById('owner-login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errorDiv = document.getElementById('login-error');
+      const submitBtn = document.getElementById('btn-login-submit');
+
+      errorDiv.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.textContent = '⏳ Authenticating...';
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, role: 'owner' })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          localStorage.setItem('sgh_owner_token', data.token);
+          localStorage.setItem('sgh_owner_user', JSON.stringify(data.user));
+          window.location.href = 'dashboard.html';
+        } else {
+          errorDiv.textContent = data.message || 'Login failed. Please check your credentials.';
+          errorDiv.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = '🔑 Secure Owner Login';
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Server connection error. Please try again.';
+        errorDiv.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = '🔑 Secure Owner Login';
+      }
+    });
+  </script>
+</body>
+</html>

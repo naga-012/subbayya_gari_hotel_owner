@@ -30,7 +30,9 @@
       <span>Authentic East Godavari Pure Vegetarian Bhojanam with Overflowing Warm Ghee!</span>
     </div>
     <div style="display: flex; align-items: center; gap: 1rem;">
-      <a href="#catering">Book Event Catering 🍛</a>
+      <a href="javascript:void(0)" onclick="promptTrackOrder()" style="font-weight: 700; color: var(--color-ghee, #F59E0B);">🛰️ Track Order</a>
+      <span>|</span>
+      <a href="/owner/" style="font-weight: 700; color: #FFF;">👑 Owner Portal</a>
       <span>|</span>
       <a href="tel:+919010888842">📞 Helpline: 9010 888 842</a>
     </div>
@@ -43,14 +45,17 @@
     <button class="mode-btn active" onclick="switchAppMode('guest')" id="mode-btn-guest">
       <span>🍽️ Feast & Order</span>
     </button>
+    <button class="mode-btn" onclick="promptTrackOrder()" id="mode-btn-track">
+      <span>🛰️ Track My Order</span>
+    </button>
     <button class="mode-btn" onclick="switchAppMode('loyalty')" id="mode-btn-loyalty">
       <span>👑 Godavari Loyalty</span>
     </button>
     <button class="mode-btn" onclick="switchAppMode('table-qr')" id="mode-btn-table-qr">
       <span>📱 Table QR & Ghee Bell</span>
     </button>
-    <button class="mode-btn" onclick="switchAppMode('crm')" id="mode-btn-crm">
-      <span>📊 Manager CRM & Analytics</span>
+    <button class="mode-btn" onclick="window.location.href='/owner/'" id="mode-btn-crm">
+      <span>📊 Owner / Admin Portal ↗</span>
     </button>
   </div>
 
@@ -2701,6 +2706,9 @@
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.25rem;">
+        <button type="button" class="btn btn-primary" onclick="openLiveOrderTracking(document.getElementById('conf-order-id').textContent)" style="width: 100%;">
+          <span>🛰️ Live Track Order Status</span>
+        </button>
         <a id="conf-whatsapp-btn" href="#" target="_blank" class="btn btn-gold" style="width: 100%;">
           <span>Track on WhatsApp 📱</span>
         </a>
@@ -2709,6 +2717,63 @@
         </button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL: REAL-TIME CUSTOMER ORDER TRACKING
+       ========================================================================== -->
+  <div class="modal-overlay" id="order-tracking-modal">
+    <div class="modal-card" style="max-width: 520px; padding: 1.75rem;">
+      <button class="modal-close-btn" onclick="closeLiveOrderTracking()">✕</button>
+
+      <div style="text-align: center; margin-bottom: 1.25rem;">
+        <span style="font-size: 2.2rem;">🌾</span>
+        <h3 style="font-family: var(--font-brand); font-size: 1.45rem; color: var(--color-primary); margin-top: 4px;">
+          Live Order Tracking
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--color-text-muted);">
+          Order <strong id="track-modal-number" style="color: var(--color-gold); font-size: 1.1rem;">#SGH-10001</strong>
+        </p>
+      </div>
+
+      <!-- Live Stage Progression Indicator -->
+      <div id="track-modal-stages" style="display: flex; justify-content: space-between; align-items: center; position: relative; margin: 1.5rem 0; padding: 0 10px;">
+        <!-- Filled by JS -->
+      </div>
+
+      <div id="track-modal-status-box" style="background: rgba(217, 119, 6, 0.1); border: 1px solid var(--color-gold); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 1rem; text-align: center;">
+        <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 800; color: var(--color-gold); letter-spacing: 0.05em;">Current Stage</div>
+        <div style="font-size: 1.25rem; font-weight: 800; color: var(--color-primary); margin-top: 2px;" id="track-current-status-title">Preparing</div>
+        <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 4px;" id="track-current-status-note">Our chefs are preparing your authentic banana leaf feast with warm ghee.</div>
+      </div>
+
+      <!-- Order Details Summary -->
+      <div style="background: var(--color-surface-muted); padding: 14px 16px; border-radius: var(--radius-md); font-size: 0.85rem; margin-bottom: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: var(--color-text-muted);">Customer:</span>
+          <strong id="track-modal-cust-name">-</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: var(--color-text-muted);">Order Type:</span>
+          <strong id="track-modal-type" style="text-transform: capitalize;">-</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: var(--color-text-muted);">Total Amount:</span>
+          <strong id="track-modal-total" style="color: var(--color-primary); font-size: 1rem;">₹0</strong>
+        </div>
+        <div id="track-modal-items-list" style="border-top: 1px dashed var(--color-border); padding-top: 8px; margin-top: 8px; font-size: 0.82rem; color: var(--color-text-sub);">
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem;">
+        <button type="button" class="btn btn-outline" onclick="closeLiveOrderTracking()" style="flex: 1;">
+          Close
+        </button>
+        <a id="track-modal-wa-btn" href="https://api.whatsapp.com/send?phone=919010888842" target="_blank" class="btn btn-gold" style="flex: 1; text-align: center;">
+          Helpline Chat 💬
+        </a>
+      </div>
     </div>
   </div>
 
@@ -3145,6 +3210,7 @@
   </nav>
 
   <!-- Scripts -->
+  <script src="/socket.io/socket.io.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

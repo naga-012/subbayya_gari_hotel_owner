@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Subbayya Gari Hotel - Owner Portal</title>
+  <script>
+    const token = localStorage.getItem('sgh_owner_token');
+    if (token) {
+      window.location.replace('dashboard.html');
+    } else {
+      window.location.replace('login.html');
+    }
+  </script>
+</head>
+<body style="background: #0F172A; color: #FFF; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh;">
+  <p>Loading Subbayya Gari Owner Portal...</p>
+</body>
+</html>
