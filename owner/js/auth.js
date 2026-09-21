@@ -2,7 +2,12 @@
  * SUBBAYYA GARI HOTEL — OWNER AUTH & SHARED CLIENT LOGIC
  */
 
-const API_BASE = '/api';
+// Dynamic Backend Base URL
+const BACKEND_BASE = (window.location.protocol === 'file:' || (window.location.hostname === 'localhost' && window.location.port !== '5000') || window.location.port === '5500')
+  ? 'http://localhost:5000'
+  : (window.location.origin.includes('onrender.com') ? window.location.origin : '');
+
+const API_BASE = `${BACKEND_BASE}/api`;
 
 // Check Authentication on Owner Pages
 function checkAuth() {
@@ -65,7 +70,11 @@ async function authFetch(url, options = {}) {
     ...(options.headers || {}),
   };
 
-  const response = await fetch(url, { ...options, headers });
+  const targetUrl = url.startsWith('http')
+    ? url
+    : (url.startsWith('/api') ? `${BACKEND_BASE}${url}` : `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`);
+
+  const response = await fetch(targetUrl, { ...options, headers });
 
   if (response.status === 401 || response.status === 403) {
     const data = await response.json().catch(() => ({}));
@@ -276,7 +285,8 @@ function showOrderAlertBanner(order) {
 let socket = null;
 function initOwnerSocket(onNewOrderCallback, onStatusUpdateCallback) {
   if (typeof io !== 'undefined') {
-    socket = io();
+    const socketOrigin = BACKEND_BASE || undefined;
+    socket = socketOrigin ? io(socketOrigin, { transports: ['websocket', 'polling'] }) : io({ transports: ['websocket', 'polling'] });
     socket.on('connect', () => {
       console.log('[Socket] Connected to server');
       socket.emit('join_owner');
@@ -284,9 +294,12 @@ function initOwnerSocket(onNewOrderCallback, onStatusUpdateCallback) {
 
     socket.on('new_order', (data) => {
       console.log('[Socket] New Order Received:', data);
-      startLoudOrderAlarm(data.order);
+      const orderData = (data && data.order) ? data.order : data;
+      if (orderData) {
+        startLoudOrderAlarm(orderData);
+      }
       if (typeof onNewOrderCallback === 'function') {
-        onNewOrderCallback(data.order);
+        onNewOrderCallback(orderData);
       }
     });
 
