@@ -19,34 +19,39 @@ const getNextOrderNumber = async () => {
 // @access  Public (Customer)
 const createOrder = async (req, res) => {
   try {
-    const {
-      customerName,
-      phone,
-      email,
-      orderType,
-      items,
-      deliveryAddress,
-      tableNumber,
-      guestsCount,
-      reservationDate,
-      reservationTime,
-      seatingPreference,
-      pickupTime,
-      vehicleNote,
-      branch,
-      notes,
-      paymentMethod,
-      appliedPromo,
-    } = req.body;
+    const rawCustomerName = (req.body.customerName || req.body.name || '').trim();
+    const rawPhone = (req.body.phone || req.body.customerPhone || req.body.mobile || '').trim();
+    const rawEmail = (req.body.email || req.body.customerEmail || '').trim();
+    const rawOrderType = (req.body.orderType || 'takeaway').toLowerCase().trim();
+    const rawItems = req.body.items || [];
+    const rawTableNumber = (req.body.tableNumber || '').trim();
+    const rawGuestsCount = req.body.guestsCount ? parseInt(req.body.guestsCount, 10) : 1;
+    const rawReservationDate = req.body.reservationDate || '';
+    const rawReservationTime = req.body.reservationTime || '';
+    const rawSeatingPreference = req.body.seatingPreference || 'Traditional Banana Leaf Seating';
+    const rawPickupTime = req.body.pickupTime || req.body.pickupSlot || (rawReservationDate && rawReservationTime ? `${rawReservationDate} at ${rawReservationTime}` : 'ASAP (15-20 Mins)');
+    const rawVehicleNote = req.body.vehicleNote || '';
+    const rawBranch = req.body.branch || req.body.branchName || 'KPHB Colony, Hyderabad';
+    const rawNotes = req.body.notes || '';
+    const rawPaymentMethod = req.body.paymentMethod || 'UPI';
+    const rawPaymentStatus = req.body.paymentStatus && req.body.paymentStatus.toLowerCase().includes('paid') ? 'Paid' : (req.body.paymentStatus || 'Pending');
+    const appliedPromo = req.body.appliedPromo || req.body.promoCode;
 
-    if (!customerName || !phone) {
+    if (!rawCustomerName) {
       return res.status(400).json({
         success: false,
-        message: 'Customer name and phone number are required',
+        message: 'Customer name is required',
       });
     }
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    if (!rawPhone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Customer phone number is required',
+      });
+    }
+
+    if (!rawItems || !Array.isArray(rawItems) || rawItems.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Order must contain at least one item',
@@ -66,13 +71,12 @@ const createOrder = async (req, res) => {
     let calculatedSubtotal = 0;
     const orderItems = [];
 
-    for (const item of items) {
+    for (const item of rawItems) {
       const quantity = Math.max(1, parseInt(item.qty || item.quantity || 1, 10));
       let dbItem = null;
 
       if (item.id || item._id || item.menuItemId) {
         const lookupId = item._id || item.menuItemId || item.id;
-        // Search by MongoDB ObjectId or string itemId
         if (typeof lookupId === 'string' && lookupId.match(/^[0-9a-fA-F]{24}$/)) {
           dbItem = await MenuItem.findById(lookupId);
         } else {
@@ -105,14 +109,39 @@ const createOrder = async (req, res) => {
       });
     }
 
+    // Normalize Delivery Address
+    const rawDeliveryAddress = req.body.deliveryAddress;
+    let normAddress = '';
+    let normLandmark = req.body.deliveryLandmark || '';
+    let normCity = 'Hyderabad';
+    let normPincode = '';
+    let normLocationUrl = req.body.gpsMapUrl || req.body.locationUrl || '';
+    let normDistanceKm = 2;
+
+    if (typeof rawDeliveryAddress === 'string') {
+      normAddress = rawDeliveryAddress;
+    } else if (typeof rawDeliveryAddress === 'object' && rawDeliveryAddress !== null) {
+      normAddress = rawDeliveryAddress.address || '';
+      normLandmark = rawDeliveryAddress.landmark || normLandmark;
+      normCity = rawDeliveryAddress.city || normCity;
+      normPincode = rawDeliveryAddress.pincode || normPincode;
+      normLocationUrl = rawDeliveryAddress.locationUrl || normLocationUrl;
+      normDistanceKm = rawDeliveryAddress.distanceKm || normDistanceKm;
+    }
+
+    if (!normLocationUrl && (normAddress || normLandmark)) {
+      const fullAddrQuery = [normAddress, normLandmark, normCity, normPincode].filter(Boolean).join(', ');
+      normLocationUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddrQuery)}`;
+    }
+
     // Calculate packaging, delivery, tax, discount
-    const isDineIn = orderType === 'dine-in' || orderType === 'table-booking';
+    const isDineIn = rawOrderType === 'dine-in' || rawOrderType === 'table-booking';
     const packagingFee = isDineIn ? 0 : (settings ? (settings.packagingFee || 30) : 30);
     
     let deliveryCharge = 0;
-    const type = isDineIn ? 'dine-in' : (orderType || 'takeaway');
+    const type = isDineIn ? 'dine-in' : (rawOrderType || 'takeaway');
     if (type === 'delivery') {
-      const distance = deliveryAddress?.distanceKm || 2;
+      const distance = normDistanceKm || 2;
       const baseFee = settings ? (settings.deliveryFeeBase || 30) : 30;
       const perKm = settings ? (settings.deliveryFeePerKm || 10) : 10;
       if (distance <= 2) {
@@ -129,31 +158,32 @@ const createOrder = async (req, res) => {
 
     const grandTotal = calculatedSubtotal + packagingFee + deliveryCharge - discount;
 
-    const orderNumber = await getNextOrderNumber();
+    let orderNumber = null;
+    if (typeof req.body.id === 'string' && req.body.id.startsWith('SGH-')) {
+      const existing = await Order.findOne({ orderNumber: req.body.id.toUpperCase() });
+      if (!existing) orderNumber = req.body.id.toUpperCase();
+    }
+    if (!orderNumber) {
+      orderNumber = await getNextOrderNumber();
+    }
 
     // Check if customer is registered user or associate phone
     let customerId = null;
     if (req.user) {
       customerId = req.user._id;
     } else {
-      const existingUser = await User.findOne({ phone: phone.trim() });
+      const existingUser = await User.findOne({ phone: rawPhone });
       if (existingUser) {
         customerId = existingUser._id;
       }
     }
 
-      let finalLocationUrl = deliveryAddress?.locationUrl || '';
-      if (!finalLocationUrl && (deliveryAddress?.address || deliveryAddress?.landmark)) {
-        const fullAddrQuery = [deliveryAddress.address, deliveryAddress.landmark, deliveryAddress.city || 'Hyderabad', deliveryAddress.pincode].filter(Boolean).join(', ');
-        finalLocationUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddrQuery)}`;
-      }
-
-      const newOrder = await Order.create({
+    const newOrder = await Order.create({
       orderNumber,
       customerId,
-      customerName: customerName.trim(),
-      phone: phone.trim(),
-      email: email ? email.trim() : '',
+      customerName: rawCustomerName,
+      phone: rawPhone,
+      email: rawEmail,
       orderType: type,
       items: orderItems,
       subtotal: calculatedSubtotal,
@@ -161,26 +191,26 @@ const createOrder = async (req, res) => {
       deliveryCharge,
       discount,
       totalAmount: grandTotal,
-      paymentMethod: paymentMethod || (isDineIn ? 'Pay at Hotel' : 'UPI'),
-      paymentStatus: 'Pending',
+      paymentMethod: rawPaymentMethod || (isDineIn ? 'Pay at Hotel' : 'UPI'),
+      paymentStatus: rawPaymentStatus,
       orderStatus: 'Pending',
       deliveryAddress: {
-        address: deliveryAddress?.address || '',
-        landmark: deliveryAddress?.landmark || '',
-        city: deliveryAddress?.city || 'Hyderabad',
-        pincode: deliveryAddress?.pincode || '',
-        locationUrl: finalLocationUrl,
-        distanceKm: deliveryAddress?.distanceKm || (type === 'delivery' ? 2 : 0),
+        address: normAddress,
+        landmark: normLandmark,
+        city: normCity,
+        pincode: normPincode,
+        locationUrl: normLocationUrl,
+        distanceKm: normDistanceKm,
       },
-      tableNumber: tableNumber || '',
-      guestsCount: guestsCount ? parseInt(guestsCount, 10) : 1,
-      reservationDate: reservationDate || '',
-      reservationTime: reservationTime || '',
-      seatingPreference: seatingPreference || 'Traditional Banana Leaf Seating',
-      pickupTime: pickupTime || (reservationDate && reservationTime ? `${reservationDate} at ${reservationTime}` : 'ASAP (15-20 Mins)'),
-      vehicleNote: vehicleNote || '',
-      branch: branch || 'KPHB Colony, Hyderabad',
-      notes: notes || '',
+      tableNumber: rawTableNumber,
+      guestsCount: rawGuestsCount,
+      reservationDate: rawReservationDate,
+      reservationTime: rawReservationTime,
+      seatingPreference: rawSeatingPreference,
+      pickupTime: rawPickupTime,
+      vehicleNote: rawVehicleNote,
+      branch: rawBranch,
+      notes: rawNotes,
       estimatedPrepTime: isDineIn ? 'Table Reserved' : '20-25 Mins',
       statusHistory: [
         {
