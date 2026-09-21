@@ -55,6 +55,7 @@ app.get('/api/health', (req, res) => {
   const dbState = mongoose.connection.readyState;
   res.status(200).json({
     status: 'OK',
+    version: '2.0.0',
     platform: 'Render',
     database: dbStates[dbState] || 'unknown',
     uptime: Math.floor(process.uptime()),
