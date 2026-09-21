@@ -433,11 +433,11 @@ const getOrderById = async (req, res) => {
     let order = null;
 
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
-      order = await Order.findById(id);
+      order = await Order.findById(id).lean();
     }
 
     if (!order) {
-      order = await Order.findOne({ orderNumber: id.toUpperCase().trim() });
+      order = await Order.findOne({ orderNumber: id.toUpperCase().trim() }).lean();
     }
 
     if (!order) {
@@ -627,7 +627,7 @@ const trackOrder = async (req, res) => {
     const { orderNumber } = req.params;
     const cleanNumber = orderNumber.toUpperCase().trim();
 
-    const order = await Order.findOne({ orderNumber: cleanNumber });
+    const order = await Order.findOne({ orderNumber: cleanNumber }).lean();
     if (!order) {
       return res.status(404).json({
         success: false,

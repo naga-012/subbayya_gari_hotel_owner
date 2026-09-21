@@ -55,7 +55,7 @@ app.get('/api/health', (req, res) => {
   const dbState = mongoose.connection.readyState;
   res.status(200).json({
     status: 'OK',
-    version: '2.0.0',
+    version: '11.0.0',
     platform: 'Render',
     database: dbStates[dbState] || 'unknown',
     uptime: Math.floor(process.uptime()),
@@ -117,7 +117,7 @@ const startServer = async () => {
 
     server.listen(PORT, () => {
       console.log('====================================================');
-      console.log(`  🌾 SUBBAYYA GARI HOTEL — OWNER PORTAL SERVER 🌾`);
+      console.log(`  🌾 SUBBAYYA GARI HOTEL — OWNER PORTAL SERVER v11.0.0 🌾`);
       console.log(`  🚀 Server Running on: http://localhost:${PORT}`);
       console.log(`  👑 Owner Portal:      http://localhost:${PORT}/ (or /owner/)`);
       console.log(`  🔑 Default Owner:     ${process.env.OWNER_EMAIL || 'owner@subbayya.com'} / ${process.env.OWNER_PASSWORD || 'Subbayya@1950'}`);

@@ -1,6 +1,6 @@
 {
   "name": "subbayya-gari-hotel",
-  "version": "2.0.0",
+  "version": "11.0.0",
   "description": "Subbayya Gari Hotel - Owner & Admin Management Operations Portal",
   "main": "server/server.js",
   "scripts": {

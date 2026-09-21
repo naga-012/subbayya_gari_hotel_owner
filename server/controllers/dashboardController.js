@@ -13,61 +13,74 @@ const getStats = async (req, res) => {
     const startOfToday = new Date(Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(), 0, 0, 0) - istOffsetMs);
     const endOfToday = new Date(Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(), 23, 59, 59, 999) - istOffsetMs);
 
-    // Today's orders
-    const todayOrders = await Order.find({
-      createdAt: { $gte: startOfToday, $lte: endOfToday },
-    });
-
-    const todayOrdersCount = todayOrders.length;
-    const todayRevenue = todayOrders
-      .filter((o) => o.orderStatus !== 'Cancelled' && o.orderStatus !== 'Rejected')
-      .reduce((sum, o) => sum + o.totalAmount, 0);
-
-    // Status counts across all active orders
-    const [
-      pendingCount,
-      acceptedCount,
-      preparingCount,
-      readyCount,
-      outForDeliveryCount,
-      completedCount,
-      cancelledCount,
-      totalOrdersCount,
-    ] = await Promise.all([
-      Order.countDocuments({ orderStatus: 'Pending' }),
-      Order.countDocuments({ orderStatus: 'Accepted' }),
-      Order.countDocuments({ orderStatus: 'Preparing' }),
-      Order.countDocuments({ orderStatus: 'Ready' }),
-      Order.countDocuments({ orderStatus: 'Out for Delivery' }),
-      Order.countDocuments({ orderStatus: 'Completed' }),
-      Order.countDocuments({ orderStatus: 'Cancelled' }),
-      Order.countDocuments({}),
+    // Parallel single-pass aggregation pipelines for zero loading time
+    const [todayAgg, statusAgg, lifetimeAgg, registeredCustomersCount, uniquePhones] = await Promise.all([
+      Order.aggregate([
+        { $match: { createdAt: { $gte: startOfToday, $lte: endOfToday } } },
+        {
+          $group: {
+            _id: null,
+            count: { $sum: 1 },
+            revenue: {
+              $sum: {
+                $cond: [{ $in: ['$orderStatus', ['Cancelled', 'Rejected']] }, 0, '$totalAmount'],
+              },
+            },
+          },
+        },
+      ]),
+      Order.aggregate([
+        {
+          $group: {
+            _id: '$orderStatus',
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      Order.aggregate([
+        {
+          $match: {
+            orderStatus: { $in: ['Completed', 'Ready', 'Out for Delivery', 'Preparing', 'Accepted'] },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: '$totalAmount' },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      User.countDocuments({ role: 'customer' }),
+      Order.distinct('phone'),
     ]);
 
-    // Customers count
-    const registeredCustomersCount = await User.countDocuments({ role: 'customer' });
-    const uniquePhones = await Order.distinct('phone');
-    const totalCustomers = Math.max(registeredCustomersCount, uniquePhones.length);
-
-    // Total lifetime revenue
-    const allCompletedOrders = await Order.find({
-      orderStatus: { $in: ['Completed', 'Ready', 'Out for Delivery', 'Preparing', 'Accepted'] },
+    const statusMap = {};
+    let totalOrdersCount = 0;
+    statusAgg.forEach((s) => {
+      statusMap[s._id] = s.count;
+      totalOrdersCount += s.count;
     });
-    const totalRevenue = allCompletedOrders.reduce((sum, o) => sum + o.totalAmount, 0);
-    const avgOrderValue = allCompletedOrders.length > 0 ? Math.round(totalRevenue / allCompletedOrders.length) : 0;
+
+    const todayOrdersCount = todayAgg[0]?.count || 0;
+    const todayRevenue = todayAgg[0]?.revenue || 0;
+    const totalRevenue = lifetimeAgg[0]?.totalRevenue || 0;
+    const completedCount = lifetimeAgg[0]?.count || 0;
+    const avgOrderValue = completedCount > 0 ? Math.round(totalRevenue / completedCount) : 0;
+    const totalCustomers = Math.max(registeredCustomersCount, uniquePhones.length);
 
     return res.status(200).json({
       success: true,
       data: {
         todayOrders: todayOrdersCount,
         todayRevenue,
-        pendingOrders: pendingCount,
-        acceptedOrders: acceptedCount,
-        preparingOrders: preparingCount,
-        readyOrders: readyCount,
-        outForDeliveryOrders: outForDeliveryCount,
-        completedOrders: completedCount,
-        cancelledOrders: cancelledCount,
+        pendingOrders: statusMap['Pending'] || 0,
+        acceptedOrders: statusMap['Accepted'] || 0,
+        preparingOrders: statusMap['Preparing'] || 0,
+        readyOrders: statusMap['Ready'] || 0,
+        outForDeliveryOrders: statusMap['Out for Delivery'] || 0,
+        completedOrders: statusMap['Completed'] || 0,
+        cancelledOrders: statusMap['Cancelled'] || 0,
         totalOrders: totalOrdersCount,
         totalCustomers,
         totalRevenue,

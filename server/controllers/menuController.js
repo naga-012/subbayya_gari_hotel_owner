@@ -45,7 +45,7 @@ const getMenuItems = async (req, res) => {
       ];
     }
 
-    const items = await MenuItem.find(filter).sort({ category: 1, name: 1 });
+    const items = await MenuItem.find(filter).sort({ category: 1, name: 1 }).lean();
 
     return res.status(200).json({
       success: true,
@@ -66,7 +66,7 @@ const getMenuItems = async (req, res) => {
 // @access  Public
 const getMenuItemById = async (req, res) => {
   try {
-    const item = await MenuItem.findById(req.params.id);
+    const item = await MenuItem.findById(req.params.id).lean();
     if (!item) {
       return res.status(404).json({
         success: false,
