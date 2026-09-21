@@ -63,14 +63,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve Owner static files at /owner and root fallback
+// Serve Owner static files at /owner
 app.use('/owner', express.static(path.join(__dirname, '../owner')));
-app.use(express.static(path.join(__dirname, '../owner')));
 
-// Redirect root to /owner/
-app.get('/', (req, res) => {
-  res.redirect('/owner/');
-});
+// Serve Customer website static files at root /
+app.use(express.static(path.join(__dirname, '../')));
 
 // Fallback route for owner subpaths
 app.get('/owner/*', (req, res) => {

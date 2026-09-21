@@ -3,6 +3,14 @@
  * Authentic Andhra Vegetarian Culinary Experience Since 1950
  */
 
+const API_BASE = (window.location.protocol === 'file:' || (window.location.hostname === 'localhost' && window.location.port !== '5000') || window.location.port === '5500')
+  ? 'https://subbayya-gari-hotel.onrender.com/api'
+  : '/api';
+
+const SOCKET_BASE = (window.location.protocol === 'file:' || (window.location.hostname === 'localhost' && window.location.port !== '5000') || window.location.port === '5500')
+  ? 'https://subbayya-gari-hotel.onrender.com'
+  : undefined;
+
 // ==========================================================================
 // 1. MENU DATABASE (30+ Authentic Subbayya Gari Specialties)
 // ==========================================================================
@@ -2604,7 +2612,7 @@ async function proceedToCheckout() {
   }
 
   try {
-    const response = await fetch('/api/orders', {
+    const response = await fetch(`${API_BASE}/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(orderPayload)
@@ -2710,7 +2718,7 @@ function showOrderConfirmationModal(name, phone, whatsappMsg, details = {}) {
 // Live Menu & Settings sync from MongoDB
 async function loadLiveMenuFromAPI() {
   try {
-    const res = await fetch('/api/menu');
+    const res = await fetch(`${API_BASE}/menu`);
     if (res.ok) {
       const json = await res.json();
       if (json.success && json.data && json.data.length > 0) {
@@ -2742,7 +2750,7 @@ async function loadLiveMenuFromAPI() {
 
 async function loadLiveStoreSettings() {
   try {
-    const res = await fetch('/api/settings');
+    const res = await fetch(`${API_BASE}/settings`);
     if (res.ok) {
       const json = await res.json();
       if (json.success && json.data) {
@@ -2783,7 +2791,7 @@ async function openLiveOrderTracking(orderNumber) {
   modal.classList.add('active');
 
   try {
-    const res = await fetch(`/api/orders/track/${cleanNumber}`);
+    const res = await fetch(`${API_BASE}/orders/track/${cleanNumber}`);
     const result = await res.json();
 
     if (res.ok && result.success) {
@@ -2867,7 +2875,7 @@ function renderLiveTrackingDetails(order) {
 
 function initCustomerTrackingSocket(orderNumber) {
   if (typeof io !== 'undefined' && !customerSocket) {
-    customerSocket = io();
+    customerSocket = SOCKET_BASE ? io(SOCKET_BASE) : io();
     customerSocket.on('connect', () => {
       customerSocket.emit('join_order_tracking', orderNumber);
     });
@@ -3035,7 +3043,7 @@ function setupReservationForm() {
         ],
       };
 
-      const res = await fetch('/api/orders', {
+      const res = await fetch(`${API_BASE}/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

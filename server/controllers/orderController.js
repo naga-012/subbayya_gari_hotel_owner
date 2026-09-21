@@ -193,14 +193,16 @@ const createOrder = async (req, res) => {
 
     // Real-time broadcast to owner dashboard via Socket.IO
     if (req.io) {
-      req.io.emit('new_order', {
+      const socketPayload = {
         order: newOrder,
         orderNumber: newOrder.orderNumber,
         customerName: newOrder.customerName,
         totalAmount: newOrder.totalAmount,
         orderType: newOrder.orderType,
         createdAt: newOrder.createdAt,
-      });
+      };
+      req.io.emit('new_order', socketPayload);
+      req.io.to('owner_room').emit('new_order', socketPayload);
     }
 
     return res.status(201).json({
@@ -270,24 +272,24 @@ const getOrders = async (req, res) => {
       ];
     }
 
-    // Date range filter
+    // Date range filter (supports Indian Standard Time IST UTC+5:30 on Render cloud servers)
     const now = new Date();
+    const istOffsetMs = 5.5 * 60 * 60 * 1000;
+    const nowIST = new Date(now.getTime() + istOffsetMs);
+    const startOfTodayIST = new Date(Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(), 0, 0, 0) - istOffsetMs);
+    const endOfTodayIST = new Date(Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(), 23, 59, 59, 999) - istOffsetMs);
+
     if (dateRange === 'today') {
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-      filter.createdAt = { $gte: startOfDay, $lte: endOfDay };
+      filter.createdAt = { $gte: startOfTodayIST, $lte: endOfTodayIST };
     } else if (dateRange === '2days' || dateRange === 'past2days') {
-      const twoDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+      const twoDaysAgo = new Date(startOfTodayIST.getTime() - 24 * 60 * 60 * 1000);
       filter.createdAt = { $gte: twoDaysAgo };
     } else if (dateRange === 'yesterday') {
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const startOfDay = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-      const endOfDay = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59, 999);
-      filter.createdAt = { $gte: startOfDay, $lte: endOfDay };
+      const startOfYesterday = new Date(startOfTodayIST.getTime() - 24 * 60 * 60 * 1000);
+      const endOfYesterday = new Date(startOfTodayIST.getTime() - 1);
+      filter.createdAt = { $gte: startOfYesterday, $lte: endOfYesterday };
     } else if (dateRange === '7days') {
-      const sevenDaysAgo = new Date(now);
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       filter.createdAt = { $gte: sevenDaysAgo };
     } else if (dateRange === '30days') {
       const thirtyDaysAgo = new Date(now);
