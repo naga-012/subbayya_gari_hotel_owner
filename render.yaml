@@ -15,9 +15,9 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: OWNER_EMAIL
-        value: myakallanagarjun09@gmail.com
+        value: myakalanagarjun09@gmail.com
       - key: OWNER_PASSWORD
-        sync: false
+        value: "123456"
       - key: OWNER_NAME
         value: G.Subbayya
       - key: OWNER_PHONE

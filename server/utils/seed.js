@@ -423,30 +423,40 @@ const seedDatabase = async () => {
     }
 
     // 1. Seed Owner Account
-    const ownerEmail = (process.env.OWNER_EMAIL || 'owner@subbayya.com').toLowerCase().trim();
-    const ownerPassword = process.env.OWNER_PASSWORD || 'Subbayya@1950';
-    const ownerName = process.env.OWNER_NAME || 'Subbayya Hotel Owner';
-    const ownerPhone = process.env.OWNER_PHONE || '+91 90108 88842';
+    const primaryOwnerEmail = (process.env.OWNER_EMAIL || 'myakalanagarjun09@gmail.com').toLowerCase().trim();
+    const ownerPassword = process.env.OWNER_PASSWORD || '123456';
+    const ownerName = process.env.OWNER_NAME || 'G. Subbayya';
+    const ownerPhone = process.env.OWNER_PHONE || '9121792433';
 
-    let ownerUser = await User.findOne({ email: ownerEmail });
-    if (!ownerUser) {
-      const passwordHash = await User.hashPassword(ownerPassword);
-      ownerUser = await User.create({
-        name: ownerName,
-        email: ownerEmail,
-        phone: ownerPhone,
-        passwordHash,
-        role: 'owner',
-        isActive: true,
-      });
-      console.log(`[Seed] ✅ Default Owner Account Created: ${ownerEmail} (Role: owner)`);
-    } else {
-      // Ensure role is owner
-      if (ownerUser.role !== 'owner') {
+    // List of owner emails to ensure exist and have active password
+    const emailsToEnsure = Array.from(new Set([
+      primaryOwnerEmail,
+      'myakalanagarjun09@gmail.com',
+      'myakallanagarjun09@gmail.com',
+      'owner@subbayya.com'
+    ]));
+
+    const passwordHash = await User.hashPassword(ownerPassword);
+
+    for (const email of emailsToEnsure) {
+      let ownerUser = await User.findOne({ email });
+      if (!ownerUser) {
+        ownerUser = await User.create({
+          name: ownerName,
+          email,
+          phone: ownerPhone,
+          passwordHash,
+          role: 'owner',
+          isActive: true,
+        });
+        console.log(`[Seed] ✅ Owner Account Created: ${email} (Password: ${ownerPassword})`);
+      } else {
         ownerUser.role = 'owner';
+        ownerUser.isActive = true;
+        ownerUser.passwordHash = passwordHash;
         await ownerUser.save();
+        console.log(`[Seed] ✅ Owner Account Updated: ${email} (Password refreshed)`);
       }
-      console.log(`[Seed] Owner account already exists: ${ownerEmail}`);
     }
 
     // 2. Seed Default Store Settings
