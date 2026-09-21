@@ -191,18 +191,26 @@ const createOrder = async (req, res) => {
       ],
     });
 
-    // Real-time broadcast to owner dashboard via Socket.IO
+    // Real-time broadcast to owner dashboard & customer tracking via Socket.IO
     if (req.io) {
       const socketPayload = {
         order: newOrder,
+        orderId: newOrder._id,
         orderNumber: newOrder.orderNumber,
         customerName: newOrder.customerName,
         totalAmount: newOrder.totalAmount,
         orderType: newOrder.orderType,
+        orderStatus: newOrder.orderStatus,
+        paymentStatus: newOrder.paymentStatus,
         createdAt: newOrder.createdAt,
       };
       req.io.emit('new_order', socketPayload);
       req.io.to('owner_room').emit('new_order', socketPayload);
+      req.io.emit('order_created', socketPayload);
+      req.io.emit('orders_updated', socketPayload);
+      const trackingRoom = `order_${newOrder.orderNumber.toUpperCase()}`;
+      req.io.to(trackingRoom).emit('order_status_updated', socketPayload);
+      req.io.to(trackingRoom).emit('order_update', socketPayload);
     }
 
     return res.status(201).json({
@@ -236,40 +244,43 @@ const getOrders = async (req, res) => {
       limit = 50,
     } = req.query;
 
-    let filter = {};
+    const andConditions = [];
 
     // Status filter
     if (status && status !== 'all') {
       if (status === 'active' || status === 'not-completed' || status === 'in-progress' || status === 'Not Completed') {
-        filter.orderStatus = { $nin: ['Completed', 'Cancelled', 'Rejected'] };
+        andConditions.push({ orderStatus: { $nin: ['Completed', 'Cancelled', 'Rejected'] } });
       } else {
-        filter.orderStatus = status;
+        andConditions.push({ orderStatus: status });
       }
     }
 
     // Order type filter
     if (orderType && orderType !== 'all') {
       if (orderType === 'dine-in' || orderType === 'table-booking') {
-        filter.orderType = { $in: ['dine-in', 'table-booking'] };
+        andConditions.push({ orderType: { $in: ['dine-in', 'table-booking'] } });
       } else {
-        filter.orderType = orderType;
+        andConditions.push({ orderType: orderType });
       }
     }
 
     // Payment status filter
     if (paymentStatus && paymentStatus !== 'all') {
-      filter.paymentStatus = paymentStatus;
+      andConditions.push({ paymentStatus: paymentStatus });
     }
 
-    // Search filter (Order ID, Customer Name, Phone)
-    if (search) {
+    // Search filter (Order ID, Customer Name, Phone, Items, Table)
+    if (search && search.trim()) {
       const searchRegex = new RegExp(search.trim(), 'i');
-      filter.$or = [
-        { orderNumber: searchRegex },
-        { customerName: searchRegex },
-        { phone: searchRegex },
-        { 'items.name': searchRegex },
-      ];
+      andConditions.push({
+        $or: [
+          { orderNumber: searchRegex },
+          { customerName: searchRegex },
+          { phone: searchRegex },
+          { 'items.name': searchRegex },
+          { tableNumber: searchRegex },
+        ],
+      });
     }
 
     // Date range filter (supports Indian Standard Time IST UTC+5:30 on Render cloud servers)
@@ -280,30 +291,44 @@ const getOrders = async (req, res) => {
     const endOfTodayIST = new Date(Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(), 23, 59, 59, 999) - istOffsetMs);
 
     if (dateRange === 'today') {
-      filter.createdAt = { $gte: startOfTodayIST, $lte: endOfTodayIST };
+      // Include today's orders + any active orders that are still pending/in-progress
+      andConditions.push({
+        $or: [
+          { createdAt: { $gte: startOfTodayIST, $lte: endOfTodayIST } },
+          { orderStatus: { $nin: ['Completed', 'Cancelled', 'Rejected'] } },
+        ],
+      });
     } else if (dateRange === '2days' || dateRange === 'past2days') {
       const twoDaysAgo = new Date(startOfTodayIST.getTime() - 24 * 60 * 60 * 1000);
-      filter.createdAt = { $gte: twoDaysAgo };
+      andConditions.push({
+        $or: [
+          { createdAt: { $gte: twoDaysAgo } },
+          { orderStatus: { $nin: ['Completed', 'Cancelled', 'Rejected'] } },
+        ],
+      });
     } else if (dateRange === 'yesterday') {
       const startOfYesterday = new Date(startOfTodayIST.getTime() - 24 * 60 * 60 * 1000);
       const endOfYesterday = new Date(startOfTodayIST.getTime() - 1);
-      filter.createdAt = { $gte: startOfYesterday, $lte: endOfYesterday };
+      andConditions.push({ createdAt: { $gte: startOfYesterday, $lte: endOfYesterday } });
     } else if (dateRange === '7days') {
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      filter.createdAt = { $gte: sevenDaysAgo };
+      andConditions.push({ createdAt: { $gte: sevenDaysAgo } });
     } else if (dateRange === '30days') {
       const thirtyDaysAgo = new Date(now);
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      filter.createdAt = { $gte: thirtyDaysAgo };
+      andConditions.push({ createdAt: { $gte: thirtyDaysAgo } });
     } else if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      const dateCond = {};
+      if (startDate) dateCond.$gte = new Date(startDate);
       if (endDate) {
         const eDate = new Date(endDate);
         eDate.setHours(23, 59, 59, 999);
-        filter.createdAt.$lte = eDate;
+        dateCond.$lte = eDate;
       }
+      andConditions.push({ createdAt: dateCond });
     }
+
+    const filter = andConditions.length > 0 ? { $and: andConditions } : {};
 
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 50;
@@ -460,15 +485,27 @@ const updateOrderStatus = async (req, res) => {
 
     await order.save();
 
-    // Real-time broadcast status change
+    // Real-time broadcast status change to owner and customer tracking
     if (req.io) {
-      req.io.emit('order_status_updated', {
+      const statusPayload = {
         orderId: order._id,
         orderNumber: order.orderNumber,
         orderStatus: order.orderStatus,
+        paymentStatus: order.paymentStatus,
         updatedAt: order.updatedAt,
+        statusHistory: order.statusHistory,
         order: order,
-      });
+      };
+      req.io.emit('order_status_updated', statusPayload);
+      req.io.emit('order_update', statusPayload);
+      req.io.emit('order_updated', statusPayload);
+      req.io.emit('orders_updated', statusPayload);
+      req.io.to('owner_room').emit('order_status_updated', statusPayload);
+
+      const trackingRoom = `order_${order.orderNumber.toUpperCase()}`;
+      req.io.to(trackingRoom).emit('order_status_updated', statusPayload);
+      req.io.to(trackingRoom).emit('order_update', statusPayload);
+      req.io.to(trackingRoom).emit('order_tracking_update', statusPayload);
     }
 
     return res.status(200).json({
@@ -520,12 +557,22 @@ const updatePaymentStatus = async (req, res) => {
     await order.save();
 
     if (req.io) {
-      req.io.emit('order_status_updated', {
+      const paymentPayload = {
         orderId: order._id,
         orderNumber: order.orderNumber,
         paymentStatus: order.paymentStatus,
+        orderStatus: order.orderStatus,
         order: order,
-      });
+      };
+      req.io.emit('order_status_updated', paymentPayload);
+      req.io.emit('payment_status_updated', paymentPayload);
+      req.io.emit('order_update', paymentPayload);
+      req.io.emit('orders_updated', paymentPayload);
+      req.io.to('owner_room').emit('order_status_updated', paymentPayload);
+
+      const trackingRoom = `order_${order.orderNumber.toUpperCase()}`;
+      req.io.to(trackingRoom).emit('order_status_updated', paymentPayload);
+      req.io.to(trackingRoom).emit('order_update', paymentPayload);
     }
 
     return res.status(200).json({
@@ -623,12 +670,20 @@ const deleteOrder = async (req, res) => {
     await order.save();
 
     if (req.io) {
-      req.io.emit('order_status_updated', {
+      const cancelPayload = {
         orderId: order._id,
         orderNumber: order.orderNumber,
         orderStatus: 'Cancelled',
         order: order,
-      });
+      };
+      req.io.emit('order_status_updated', cancelPayload);
+      req.io.emit('order_update', cancelPayload);
+      req.io.emit('orders_updated', cancelPayload);
+      req.io.to('owner_room').emit('order_status_updated', cancelPayload);
+
+      const trackingRoom = `order_${order.orderNumber.toUpperCase()}`;
+      req.io.to(trackingRoom).emit('order_status_updated', cancelPayload);
+      req.io.to(trackingRoom).emit('order_update', cancelPayload);
     }
 
     return res.status(200).json({
@@ -678,13 +733,22 @@ const updateTableNumber = async (req, res) => {
     await order.save();
 
     if (req.io) {
-      req.io.emit('order_status_updated', {
+      const tablePayload = {
         orderId: order._id,
         orderNumber: order.orderNumber,
         tableNumber: order.tableNumber,
         orderStatus: order.orderStatus,
         order: order,
-      });
+      };
+      req.io.emit('order_status_updated', tablePayload);
+      req.io.emit('table_allocated', tablePayload);
+      req.io.emit('order_update', tablePayload);
+      req.io.emit('orders_updated', tablePayload);
+      req.io.to('owner_room').emit('order_status_updated', tablePayload);
+
+      const trackingRoom = `order_${order.orderNumber.toUpperCase()}`;
+      req.io.to(trackingRoom).emit('order_status_updated', tablePayload);
+      req.io.to(trackingRoom).emit('order_update', tablePayload);
     }
 
     return res.status(200).json({

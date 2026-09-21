@@ -74,6 +74,8 @@ const updateSettings = async (req, res) => {
     // Broadcast store status to active clients
     if (req.io) {
       req.io.emit('store_settings_updated', settings);
+      req.io.emit('store_status_updated', settings);
+      req.io.emit('settings_updated', settings);
     }
 
     return res.status(200).json({

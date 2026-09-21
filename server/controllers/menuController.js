@@ -134,6 +134,13 @@ const createMenuItem = async (req, res) => {
       dietary: Array.isArray(dietary) ? dietary : [],
     });
 
+    if (req.io) {
+      req.io.emit('menu_item_created', item);
+      req.io.emit('menu_updated', { action: 'create', item });
+      req.io.emit('menu_change', item);
+      req.io.emit('menu_refresh');
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Menu item created successfully',
@@ -197,6 +204,13 @@ const updateMenuItem = async (req, res) => {
 
     await item.save();
 
+    if (req.io) {
+      req.io.emit('menu_item_updated', item);
+      req.io.emit('menu_updated', { action: 'update', item });
+      req.io.emit('menu_change', item);
+      req.io.emit('menu_refresh');
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Menu item updated successfully',
@@ -236,6 +250,15 @@ const toggleMenuItemStatus = async (req, res) => {
 
     await item.save();
 
+    if (req.io) {
+      req.io.emit('item_availability_changed', { itemId: item._id, isAvailable: item.isAvailable, item });
+      req.io.emit('menu_item_status_changed', item);
+      req.io.emit('menu_item_updated', item);
+      req.io.emit('menu_updated', { action: 'status', item });
+      req.io.emit('menu_change', item);
+      req.io.emit('menu_refresh');
+    }
+
     return res.status(200).json({
       success: true,
       message: `Menu item status updated (${item.isAvailable ? 'In Stock' : 'Out of Stock'})`,
@@ -267,6 +290,13 @@ const deleteMenuItem = async (req, res) => {
     item.isActive = false;
     item.isAvailable = false;
     await item.save();
+
+    if (req.io) {
+      req.io.emit('menu_item_deleted', { itemId: item._id, item });
+      req.io.emit('menu_updated', { action: 'delete', item });
+      req.io.emit('menu_change', item);
+      req.io.emit('menu_refresh');
+    }
 
     return res.status(200).json({
       success: true,

@@ -292,23 +292,40 @@ function initOwnerSocket(onNewOrderCallback, onStatusUpdateCallback) {
       socket.emit('join_owner');
     });
 
-    socket.on('new_order', (data) => {
+    socket.on('reconnect', () => {
+      console.log('[Socket] Reconnected to server');
+      socket.emit('join_owner');
+      if (typeof onNewOrderCallback === 'function') onNewOrderCallback();
+    });
+
+    const handleNewOrder = (data) => {
       console.log('[Socket] New Order Received:', data);
       const orderData = (data && data.order) ? data.order : data;
-      if (orderData) {
+      if (orderData && orderData.orderNumber) {
         startLoudOrderAlarm(orderData);
       }
       if (typeof onNewOrderCallback === 'function') {
         onNewOrderCallback(orderData);
       }
-    });
+    };
 
-    socket.on('order_status_updated', (data) => {
+    socket.on('new_order', handleNewOrder);
+    socket.on('order_created', handleNewOrder);
+
+    const handleStatusUpdate = (data) => {
       console.log('[Socket] Order Status Updated:', data);
-      // If the order is accepted or moved to any stage other than Pending, stop the alarm!
-      if (data.orderStatus && data.orderStatus !== 'Pending') {
+      if (data && data.orderStatus && data.orderStatus !== 'Pending') {
         stopOrderAlarm();
       }
+      if (typeof onStatusUpdateCallback === 'function') {
+        onStatusUpdateCallback(data);
+      }
+    };
+
+    socket.on('order_status_updated', handleStatusUpdate);
+    socket.on('order_update', handleStatusUpdate);
+    socket.on('order_updated', handleStatusUpdate);
+    socket.on('orders_updated', (data) => {
       if (typeof onStatusUpdateCallback === 'function') {
         onStatusUpdateCallback(data);
       }
