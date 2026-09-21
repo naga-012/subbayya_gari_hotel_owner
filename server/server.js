@@ -4,6 +4,7 @@ const path = require('path');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { Server } = require('socket.io');
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const seedDatabase = require('./utils/seed');
 
@@ -50,21 +51,28 @@ app.use('/api/settings', require('./routes/settings'));
 
 // Health Check
 app.get('/api/health', (req, res) => {
+  const dbStates = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+  const dbState = mongoose.connection.readyState;
   res.status(200).json({
     status: 'OK',
-    uptime: process.uptime(),
+    platform: 'Render',
+    database: dbStates[dbState] || 'unknown',
+    uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     restaurant: 'Subbayya Gari Hotel',
   });
 });
 
-// Serve Owner static files at /owner
+// Serve Owner static files at /owner and root fallback
 app.use('/owner', express.static(path.join(__dirname, '../owner')));
+app.use(express.static(path.join(__dirname, '../owner')));
 
-// Serve Customer static files at root /
-app.use(express.static(path.join(__dirname, '../')));
+// Redirect root to /owner/
+app.get('/', (req, res) => {
+  res.redirect('/owner/');
+});
 
-// Fallback route for SPA or owner subpaths
+// Fallback route for owner subpaths
 app.get('/owner/*', (req, res) => {
   res.sendFile(path.join(__dirname, '../owner/index.html'));
 });

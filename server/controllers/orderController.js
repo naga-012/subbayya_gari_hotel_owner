@@ -142,7 +142,13 @@ const createOrder = async (req, res) => {
       }
     }
 
-    const newOrder = await Order.create({
+      let finalLocationUrl = deliveryAddress?.locationUrl || '';
+      if (!finalLocationUrl && (deliveryAddress?.address || deliveryAddress?.landmark)) {
+        const fullAddrQuery = [deliveryAddress.address, deliveryAddress.landmark, deliveryAddress.city || 'Hyderabad', deliveryAddress.pincode].filter(Boolean).join(', ');
+        finalLocationUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddrQuery)}`;
+      }
+
+      const newOrder = await Order.create({
       orderNumber,
       customerId,
       customerName: customerName.trim(),
@@ -163,7 +169,7 @@ const createOrder = async (req, res) => {
         landmark: deliveryAddress?.landmark || '',
         city: deliveryAddress?.city || 'Hyderabad',
         pincode: deliveryAddress?.pincode || '',
-        locationUrl: deliveryAddress?.locationUrl || '',
+        locationUrl: finalLocationUrl,
         distanceKm: deliveryAddress?.distanceKm || (type === 'delivery' ? 2 : 0),
       },
       tableNumber: tableNumber || '',
@@ -270,6 +276,9 @@ const getOrders = async (req, res) => {
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
       filter.createdAt = { $gte: startOfDay, $lte: endOfDay };
+    } else if (dateRange === '2days' || dateRange === 'past2days') {
+      const twoDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+      filter.createdAt = { $gte: twoDaysAgo };
     } else if (dateRange === 'yesterday') {
       const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);

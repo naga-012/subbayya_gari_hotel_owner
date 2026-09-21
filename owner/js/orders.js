@@ -69,12 +69,51 @@ function setOrderTypeTab(type, btnElement) {
   loadOrders();
 }
 
+function setDateRangeFilter(range, btnElement) {
+  // Update buttons UI
+  document.querySelectorAll('.date-quick-btn').forEach((b) => b.classList.remove('active'));
+  if (btnElement) {
+    btnElement.classList.add('active');
+  } else {
+    const matchingBtn = document.getElementById(`btn-date-${range}`);
+    if (matchingBtn) matchingBtn.classList.add('active');
+  }
+
+  // Sync dropdown
+  const dateSelect = document.getElementById('filter-date');
+  if (dateSelect) {
+    dateSelect.value = range;
+  }
+
+  loadOrders();
+}
+
 async function loadOrders() {
   const status = document.getElementById('filter-status')?.value || 'all';
   const orderType = activeOrderType || document.getElementById('filter-type')?.value || 'all';
   const paymentStatus = document.getElementById('filter-payment')?.value || 'all';
-  const dateRange = document.getElementById('filter-date')?.value || 'all';
+  const dateRange = document.getElementById('filter-date')?.value || 'today';
   const search = document.getElementById('search-orders')?.value || '';
+
+  // Sync quick date button active state
+  document.querySelectorAll('.date-quick-btn').forEach((b) => b.classList.remove('active'));
+  const activeBtn = document.getElementById(`btn-date-${dateRange}`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  const cardSubtitleEl = document.getElementById('table-card-subtitle');
+  if (cardSubtitleEl) {
+    const dateLabel =
+      dateRange === 'today'
+        ? "today's orders"
+        : dateRange === '2days'
+        ? 'past 2 days orders'
+        : dateRange === '7days'
+        ? 'last 7 days orders'
+        : dateRange === 'yesterday'
+        ? "yesterday's orders"
+        : 'all matching orders';
+    cardSubtitleEl.textContent = `Showing ${dateLabel} from database`;
+  }
 
   const params = new URLSearchParams();
   if (status !== 'all') params.append('status', status);

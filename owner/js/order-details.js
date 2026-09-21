@@ -44,6 +44,25 @@ function renderOrderUI(order) {
   document.getElementById('detail-customer-phone').textContent = order.phone;
   document.getElementById('detail-customer-email').textContent = order.email || 'N/A';
 
+  // Customer Address in Customer Card
+  const custAddrRow = document.getElementById('detail-cust-address-row');
+  const custAddrEl = document.getElementById('detail-customer-address');
+  const orderCustAddr = order.deliveryAddress?.address || '';
+  if (custAddrRow && custAddrEl) {
+    if (orderCustAddr) {
+      custAddrRow.style.display = 'block';
+      const custMapLink = order.deliveryAddress?.locationUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(orderCustAddr)}`;
+      custAddrEl.innerHTML = `
+        <span>${orderCustAddr}</span>
+        <a href="${custMapLink}" target="_blank" rel="noopener noreferrer" style="display:inline-block; margin-left:6px; color:#60A5FA; text-decoration:none; font-weight:700;">
+          🗺️ View Map ↗
+        </a>
+      `;
+    } else {
+      custAddrRow.style.display = 'none';
+    }
+  }
+
   // Order Type & Branch
   const typeEl = document.getElementById('detail-order-type');
   typeEl.textContent = order.orderType.toUpperCase();
@@ -51,11 +70,25 @@ function renderOrderUI(order) {
 
   // Delivery / Dine-in / Takeaway specific fields
   const deliveryCard = document.getElementById('detail-delivery-section');
+  const mapEmbedWrapper = document.getElementById('detail-map-embed-wrapper');
+  const mapIframe = document.getElementById('detail-map-iframe');
+  const distEl = document.getElementById('detail-delivery-distance');
+
   if (order.orderType === 'delivery') {
     deliveryCard.style.display = 'block';
     const addr = order.deliveryAddress;
     const fullAddrQuery = [addr?.address, addr?.landmark, addr?.city || 'Hyderabad', addr?.pincode].filter(Boolean).join(', ');
     const mapUrl = addr?.locationUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddrQuery || 'Hyderabad')}`;
+
+    // Determine query for Google Maps embed iframe
+    let embedQuery = fullAddrQuery || 'Hyderabad, Telangana';
+    if (addr?.locationUrl) {
+      // Check if locationUrl contains lat,lng coordinates
+      const coordsMatch = addr.locationUrl.match(/q=([-0-9.]+),([-0-9.]+)/) || addr.locationUrl.match(/([-0-9.]+),([-0-9.]+)/);
+      if (coordsMatch) {
+        embedQuery = `${coordsMatch[1]},${coordsMatch[2]}`;
+      }
+    }
 
     document.getElementById('detail-delivery-addr').innerHTML = `
       <div style="font-size: 1.05rem; font-weight: 700; color: #FFF; line-height: 1.3;">
@@ -68,15 +101,27 @@ function renderOrderUI(order) {
     document.getElementById('detail-delivery-landmark').textContent = '';
     document.getElementById('detail-delivery-city').textContent = '';
 
+    if (distEl) {
+      const km = addr?.distanceKm || 2;
+      distEl.textContent = `🛵 Est. Distance: ~${km} km from Kitchen (${order.branch || 'KPHB'})`;
+    }
+
     const mapsBtn = document.getElementById('detail-maps-btn');
     if (mapsBtn) {
       mapsBtn.href = mapUrl;
       mapsBtn.target = '_blank';
       mapsBtn.style.display = 'inline-flex';
-      mapsBtn.innerHTML = '🗺️ Open Live GPS Navigation / Google Maps ↗';
+      mapsBtn.innerHTML = '🗺️ Open in Google Maps / Live GPS Navigation ↗';
+    }
+
+    if (mapEmbedWrapper && mapIframe) {
+      mapEmbedWrapper.style.display = 'block';
+      mapIframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(embedQuery)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
     }
   } else if (order.orderType === 'dine-in' || order.orderType === 'table-booking') {
     deliveryCard.style.display = 'block';
+    if (mapEmbedWrapper) mapEmbedWrapper.style.display = 'none';
+    if (distEl) distEl.textContent = '';
     typeEl.textContent = 'TABLE BOOKING';
     typeEl.style.background = 'rgba(245, 158, 11, 0.2)';
     typeEl.style.color = 'var(--color-gold)';
@@ -136,6 +181,8 @@ function renderOrderUI(order) {
     document.getElementById('detail-maps-btn').style.display = 'none';
   } else {
     deliveryCard.style.display = 'block';
+    if (mapEmbedWrapper) mapEmbedWrapper.style.display = 'none';
+    if (distEl) distEl.textContent = '';
     document.getElementById('detail-delivery-addr').innerHTML = `<strong style="color:var(--color-primary); font-size:1.1rem;">🥡 Restaurant Takeaway / Curbside</strong>`;
     document.getElementById('detail-delivery-landmark').textContent = `Pickup Slot: ${order.pickupTime || 'ASAP (15-20 Mins)'}`;
     document.getElementById('detail-delivery-city').textContent = order.vehicleNote ? `Vehicle Note: ${order.vehicleNote}` : '';

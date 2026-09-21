@@ -29,7 +29,7 @@ function renderCustomersTable(customers) {
   if (customers.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align:center; padding: 40px; color: var(--color-text-muted);">
+        <td colspan="9" style="text-align:center; padding: 40px; color: var(--color-text-muted);">
           <div style="font-size: 2rem; margin-bottom: 8px;">👥</div>
           <div>No customer profiles found.</div>
         </td>
@@ -41,6 +41,8 @@ function renderCustomersTable(customers) {
   tbody.innerHTML = customers
     .map((c) => {
       const tierColor = c.tier === 'VIP' ? '#F59E0B' : c.tier === 'Gold' ? '#EAB308' : '#94A3B8';
+      const addressText = c.address || 'Hyderabad, Telangana';
+      const mapLink = c.locationUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`;
 
       return `
       <tr>
@@ -49,10 +51,20 @@ function renderCustomersTable(customers) {
         </td>
         <td>
           <div style="font-weight: 700; color: var(--color-text-main);">${c.name}</div>
-          ${c.isRegistered ? `<span style="font-size: 0.68rem; color: #10B981; font-weight: 700;">Registered User</span>` : `<span style="font-size: 0.68rem; color: var(--color-text-muted);">Guest Guest</span>`}
+          ${c.isRegistered ? `<span style="font-size: 0.68rem; color: #10B981; font-weight: 700;">Registered User</span>` : `<span style="font-size: 0.68rem; color: var(--color-text-muted);">Guest Customer</span>`}
         </td>
         <td>${c.phone}</td>
         <td>${c.email}</td>
+        <td>
+          <div style="font-size: 0.8rem; color: var(--color-text-main); max-width: 220px; line-height: 1.2;">
+            📍 ${addressText}
+          </div>
+          <div style="margin-top: 3px;">
+            <a href="${mapLink}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 3px; font-size: 0.68rem; color: #60A5FA; background: rgba(59, 130, 246, 0.15); padding: 1px 6px; border-radius: 4px; text-decoration: none; border: 1px solid rgba(59, 130, 246, 0.3); font-weight: 700;">
+              🗺️ Google Maps ↗
+            </a>
+          </div>
+        </td>
         <td style="text-align: center; font-weight: 800; color: var(--color-gold);">${c.totalOrders}</td>
         <td style="font-weight: 800; color: #10B981;">${formatCurrency(c.totalSpent)}</td>
         <td>
@@ -61,7 +73,7 @@ function renderCustomersTable(customers) {
         </td>
         <td>
           <button class="btn btn-secondary btn-sm" onclick="viewCustomerDetails('${c.phone}')">
-            View History
+            View Details
           </button>
         </td>
       </tr>
@@ -91,6 +103,40 @@ function renderCustomerModal(profile) {
   document.getElementById('modal-cust-orders-count').textContent = profile.totalOrders;
   document.getElementById('modal-cust-spent').textContent = formatCurrency(profile.totalSpent);
   document.getElementById('modal-cust-tier').textContent = profile.tier || 'Guest';
+
+  // Customer Location & Address section in Modal
+  const addrText = profile.address || (profile.deliveryAddress?.address ? `${profile.deliveryAddress.address}, ${profile.deliveryAddress.city || ''}` : 'Hyderabad, Telangana');
+  const fullAddrQuery = profile.deliveryAddress
+    ? [profile.deliveryAddress.address, profile.deliveryAddress.landmark, profile.deliveryAddress.city, profile.deliveryAddress.pincode].filter(Boolean).join(', ')
+    : addrText;
+  const mapUrl = profile.locationUrl || profile.deliveryAddress?.locationUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddrQuery || 'Hyderabad')}`;
+
+  let embedQuery = fullAddrQuery || 'Hyderabad, Telangana';
+  if (profile.locationUrl || profile.deliveryAddress?.locationUrl) {
+    const rawUrl = profile.locationUrl || profile.deliveryAddress?.locationUrl || '';
+    const coordsMatch = rawUrl.match(/q=([-0-9.]+),([-0-9.]+)/) || rawUrl.match(/([-0-9.]+),([-0-9.]+)/);
+    if (coordsMatch) {
+      embedQuery = `${coordsMatch[1]},${coordsMatch[2]}`;
+    }
+  }
+
+  const addrEl = document.getElementById('modal-cust-address-text');
+  if (addrEl) {
+    addrEl.innerHTML = `
+      <div style="font-weight: 700; color: #FFF;">📍 ${addrText}</div>
+      ${profile.deliveryAddress?.landmark ? `<div style="font-size: 0.78rem; color: var(--color-gold); margin-top: 2px;">🏛️ Landmark: ${profile.deliveryAddress.landmark}</div>` : ''}
+    `;
+  }
+
+  const mapsBtn = document.getElementById('modal-cust-maps-btn');
+  if (mapsBtn) {
+    mapsBtn.href = mapUrl;
+  }
+
+  const mapIframe = document.getElementById('modal-cust-map-iframe');
+  if (mapIframe) {
+    mapIframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(embedQuery)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  }
 
   const ordersTbody = document.getElementById('modal-cust-orders-tbody');
   if (profile.orders.length === 0) {

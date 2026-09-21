@@ -27,6 +27,7 @@ const getCustomers = async (req, res) => {
           },
           lastOrderDate: { $max: '$createdAt' },
           lastOrderNumber: { $last: '$orderNumber' },
+          lastDeliveryAddress: { $last: '$deliveryAddress' },
         },
       },
       { $sort: { lastOrderDate: -1 } },
@@ -41,12 +42,16 @@ const getCustomers = async (req, res) => {
 
     let customers = orderStats.map((stat) => {
       const regUser = userPhoneMap.get(stat._id);
+      const addr = stat.lastDeliveryAddress?.address || regUser?.address || '';
+      const locationUrl = stat.lastDeliveryAddress?.locationUrl || (addr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}` : '');
       return {
         id: regUser ? regUser._id : stat._id,
         customerId: regUser ? `CUST-${String(regUser._id).slice(-6).toUpperCase()}` : `GUEST-${stat._id.slice(-4)}`,
         name: regUser ? regUser.name : stat.customerName,
         phone: stat._id,
         email: regUser ? regUser.email : (stat.email || 'N/A'),
+        address: addr,
+        locationUrl: locationUrl,
         totalOrders: stat.totalOrders,
         totalSpent: stat.totalSpent,
         lastOrderDate: stat.lastOrderDate,
@@ -62,12 +67,15 @@ const getCustomers = async (req, res) => {
     registeredUsers.forEach((u) => {
       const alreadyIncluded = customers.some((c) => c.phone === u.phone);
       if (!alreadyIncluded && u.phone) {
+        const addr = u.address || '';
         customers.push({
           id: u._id,
           customerId: `CUST-${String(u._id).slice(-6).toUpperCase()}`,
           name: u.name,
           phone: u.phone,
           email: u.email,
+          address: addr,
+          locationUrl: addr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}` : '',
           totalOrders: 0,
           totalSpent: 0,
           lastOrderDate: null,
@@ -141,13 +149,19 @@ const getCustomerById = async (req, res) => {
       .filter((o) => o.orderStatus !== 'Cancelled' && o.orderStatus !== 'Rejected')
       .reduce((sum, o) => sum + o.totalAmount, 0);
 
+    const firstOrderWithAddr = orders.find((o) => o.deliveryAddress && o.deliveryAddress.address);
+    const resolvedAddress = user?.address || firstOrderWithAddr?.deliveryAddress?.address || 'N/A';
+    const resolvedLocationUrl = firstOrderWithAddr?.deliveryAddress?.locationUrl || (resolvedAddress !== 'N/A' ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(resolvedAddress)}` : '');
+
     const customerProfile = {
       id: user ? user._id : phoneQuery,
       customerId: user ? `CUST-${String(user._id).slice(-6).toUpperCase()}` : `GUEST-${phoneQuery.slice(-4)}`,
       name: user ? user.name : (orders[0]?.customerName || 'Customer'),
       phone: phoneQuery,
       email: user ? user.email : (orders[0]?.email || 'N/A'),
-      address: user ? user.address : (orders[0]?.deliveryAddress?.address || 'N/A'),
+      address: resolvedAddress,
+      locationUrl: resolvedLocationUrl,
+      deliveryAddress: firstOrderWithAddr?.deliveryAddress || null,
       isRegistered: Boolean(user),
       tier: user ? user.tier : 'Guest',
       loyaltyCoins: user ? user.loyaltyCoins : 0,

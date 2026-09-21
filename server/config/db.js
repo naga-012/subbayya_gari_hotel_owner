@@ -1,15 +1,34 @@
 const mongoose = require('mongoose');
 
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
 const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/subbayya_gari_hotel', {
+  if (cached.conn && mongoose.connection.readyState === 1) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
       serverSelectionTimeoutMS: 5000,
+    };
+
+    const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/subbayya_gari_hotel';
+    cached.promise = mongoose.connect(uri, opts).then((m) => {
+      console.log(`[MongoDB] Connected to database: ${m.connection.host}/${m.connection.name}`);
+      return m;
     });
-    console.log(`[MongoDB] Connected to database: ${conn.connection.host}/${conn.connection.name}`);
-    return conn;
+  }
+
+  try {
+    cached.conn = await cached.promise;
+    return cached.conn;
   } catch (error) {
+    cached.promise = null;
     console.error(`[MongoDB] Connection Error: ${error.message}`);
-    // Do not crash the entire app if DB is briefly disconnected; allow server to run and retry
     return null;
   }
 };

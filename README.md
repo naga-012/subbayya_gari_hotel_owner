@@ -197,6 +197,16 @@ On first boot, the server will automatically:
 
 ---
 
+## 🌐 Deploy to Render
+
+The application is fully configured for deployment on **Render** (free Web Service with persistent WebSocket support for real-time notifications):
+
+- 📋 **Detailed Deployment Guide:** Follow the step-by-step instructions in [RENDER_DEPLOYMENT.md](file:///c:/Users/myaka/OneDrive/Desktop/subbayya_gari_hotel_owner-main/RENDER_DEPLOYMENT.md)
+- ⚙️ **Infrastructure Blueprint:** Preconfigured in [`render.yaml`](file:///c:/Users/myaka/OneDrive/Desktop/subbayya_gari_hotel_owner-main/render.yaml) for 1-click automated Blueprint deploy
+- 🩺 **Automated Health Check:** Monitored at `/api/health`
+
+---
+
 ## 🧪 Automated Testing
 
 Run the full end-to-end 19-step verification test suite:

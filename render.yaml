@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: subbayya-gari-hotel
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OWNER_EMAIL
+        value: myakallanagarjun09@gmail.com
+      - key: OWNER_PASSWORD
+        sync: false
+      - key: OWNER_NAME
+        value: G.Subbayya
+      - key: OWNER_PHONE
+        value: "+919121792433"

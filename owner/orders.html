@@ -62,10 +62,6 @@
           <span class="nav-icon">⚙️</span>
           <span>Restaurant Settings</span>
         </a>
-        <a href="/" target="_blank" class="nav-item">
-          <span class="nav-icon">🌐</span>
-          <span>Customer Website ↗</span>
-        </a>
       </nav>
 
       <div class="sidebar-footer">
@@ -126,6 +122,23 @@
           </button>
         </div>
 
+        <!-- QUICK DATE RANGE SWITCHER -->
+        <div class="date-quick-bar">
+          <span style="font-size: 0.78rem; font-weight: 800; color: var(--color-text-muted); text-transform: uppercase; margin-right: 4px;">Period:</span>
+          <button class="date-quick-btn active" id="btn-date-today" onclick="setDateRangeFilter('today', this)">
+            📅 Today's Orders
+          </button>
+          <button class="date-quick-btn" id="btn-date-2days" onclick="setDateRangeFilter('2days', this)">
+            ⏳ Past 2 Days Orders
+          </button>
+          <button class="date-quick-btn" id="btn-date-7days" onclick="setDateRangeFilter('7days', this)">
+            🗓️ Last 7 Days
+          </button>
+          <button class="date-quick-btn" id="btn-date-all" onclick="setDateRangeFilter('all', this)">
+            📋 All Time History
+          </button>
+        </div>
+
         <!-- FILTER CONTROLS BAR -->
         <div class="filter-bar">
           <div class="search-box">
@@ -167,11 +180,12 @@
 
             <!-- DATE FILTER -->
             <select id="filter-date" class="filter-select">
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
+              <option value="today" selected>📅 Today's Orders</option>
+              <option value="2days">⏳ Past 2 Days Orders</option>
               <option value="yesterday">Yesterday</option>
               <option value="7days">Last 7 Days</option>
               <option value="30days">Last 30 Days</option>
+              <option value="all">All Time History</option>
             </select>
           </div>
         </div>

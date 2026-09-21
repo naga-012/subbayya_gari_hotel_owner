@@ -749,6 +749,43 @@ body {
 .payment-badge.Pending { background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.3); }
 .payment-badge.Failed { background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); }
 
+/* Quick Date Filter Buttons */
+.date-quick-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.date-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  background: rgba(30, 41, 59, 0.8);
+  color: var(--color-text-sub);
+  border: 1px solid var(--color-card-border);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.date-quick-btn:hover {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-gold);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.date-quick-btn.active {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.25));
+  color: var(--color-gold);
+  border-color: var(--color-gold);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+}
+
 /* Filter Controls Bar */
 .filter-bar {
   display: flex;
