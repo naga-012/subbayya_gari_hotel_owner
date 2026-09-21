@@ -1,7 +1,7 @@
 {
   "name": "subbayya-gari-hotel",
   "version": "1.0.0",
-  "description": "Subbayya Gari Hotel - Full-Stack Pure Veg Restaurant Ordering & Owner Admin Management Portal",
+  "description": "Subbayya Gari Hotel - Owner & Admin Management Operations Portal",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",

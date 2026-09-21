@@ -63,14 +63,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve Owner static files at /owner
+// Serve Owner Portal static files at root / and /owner
+app.use(express.static(path.join(__dirname, '../owner')));
 app.use('/owner', express.static(path.join(__dirname, '../owner')));
 
-// Serve Customer website static files at root /
-app.use(express.static(path.join(__dirname, '../')));
-
-// Fallback route for owner subpaths
-app.get('/owner/*', (req, res) => {
+// Fallback route for non-API web navigation to Owner Portal
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+    return next();
+  }
   res.sendFile(path.join(__dirname, '../owner/index.html'));
 });
 
@@ -115,10 +116,9 @@ const startServer = async () => {
 
     server.listen(PORT, () => {
       console.log('====================================================');
-      console.log(`  🌾 SUBBAYYA GARI HOTEL — FULL STACK SERVER 🌾`);
+      console.log(`  🌾 SUBBAYYA GARI HOTEL — OWNER PORTAL SERVER 🌾`);
       console.log(`  🚀 Server Running on: http://localhost:${PORT}`);
-      console.log(`  🍽️ Customer Website:  http://localhost:${PORT}/`);
-      console.log(`  👑 Owner Portal:      http://localhost:${PORT}/owner/`);
+      console.log(`  👑 Owner Portal:      http://localhost:${PORT}/ (or /owner/)`);
       console.log(`  🔑 Default Owner:     ${process.env.OWNER_EMAIL || 'owner@subbayya.com'} / ${process.env.OWNER_PASSWORD || 'Subbayya@1950'}`);
       console.log('====================================================');
     });

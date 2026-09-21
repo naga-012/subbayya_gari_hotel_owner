@@ -1,29 +1,24 @@
-# 🌾 Subbayya Gari Hotel — Full-Stack Ordering & Owner Admin Management System
+# 🌾 Subbayya Gari Hotel — Owner & Admin Management System
 
 > **Authentic Andhra Pure Vegetarian Butta Bhojanam Since 1950**  
-> A production-ready Full-Stack Restaurant Ordering and Owner/Admin Operations Portal unified on a single **Node.js, Express, MongoDB, and Socket.IO** backend.
+> A production-ready Restaurant Owner & Admin Operations Portal backed by a **Node.js, Express, MongoDB, and Socket.IO** server.
 
 ---
 
 ## 🏛️ System Architecture
 
 ```
-CUSTOMER WEBSITE (http://localhost:5000/)
-     │  - Live Menu from MongoDB
-     │  - Cart & Checkout (Delivery / Takeaway / Dine-In)
-     │  - Real-time Order Tracking Modal
-     ▼
-REST API & SOCKET.IO BROADCAST (Express.js)
-     ▲
+OWNER PORTAL (http://localhost:5000/ or http://localhost:5000/owner/)
      │  - Real-time Order Notifications (Audio Chime + Live Banner)
      │  - Full Kitchen Order Pipeline & Status Workflow
      │  - Menu Management (Add, Edit, Price Change, In/Out of Stock)
      │  - Customer Directory & Lifetime Spend History
      │  - Real-time Financial Analytics & Chart.js Trends
      │  - Receipt Printing & CSV Export
-     │
-OWNER PORTAL (http://localhost:5000/owner/)
-     │
+     ▼
+REST API & SOCKET.IO HUB (Express.js)
+     │  - Authenticated Endpoints (/api/orders, /api/menu, /api/customers, etc.)
+     │  - Real-time Socket.IO Broadcast to Owner Room
      ▼
 MONGODB SHARED DATABASE (mongodb://127.0.0.1:27017/subbayya_gari_hotel)
      • Users (Role-based: customer / owner)
@@ -94,10 +89,6 @@ MONGODB SHARED DATABASE (mongodb://127.0.0.1:27017/subbayya_gari_hotel)
 
 ```
 subbayya_owner/
-├── index.html                   # Customer Website Interface
-├── styles.css                   # Customer Website Styles
-├── app.js                       # Customer App Logic (connected to REST APIs & Socket.IO)
-│
 ├── owner/                       # Owner / Admin Management Application
 │   ├── index.html               # Owner Portal Entry & Redirect
 │   ├── login.html               # Owner Secure Authentication Page
