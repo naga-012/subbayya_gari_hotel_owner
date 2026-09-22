@@ -19,12 +19,41 @@ const getNextOrderNumber = async () => {
 // @access  Public (Customer)
 const createOrder = async (req, res) => {
   try {
-    const rawCustomerName = (req.body.customerName || req.body.name || '').trim();
-    const rawPhone = (req.body.phone || req.body.customerPhone || req.body.mobile || '').trim();
-    const rawEmail = (req.body.email || req.body.customerEmail || '').trim();
-    const rawOrderType = (req.body.orderType || 'takeaway').toLowerCase().trim();
-    const rawItems = req.body.items || [];
-    const rawTableNumber = (req.body.tableNumber || '').trim();
+    const rawCustomerName = (
+      req.body.customerName ||
+      req.body.name ||
+      req.body.fullName ||
+      req.body.userName ||
+      'Customer'
+    ).toString().trim();
+
+    const rawPhone = (
+      req.body.phone ||
+      req.body.customerPhone ||
+      req.body.mobile ||
+      req.body.contactNumber ||
+      req.body.phoneNumber ||
+      ''
+    ).toString().trim();
+
+    const rawEmail = (
+      req.body.email ||
+      req.body.customerEmail ||
+      ''
+    ).toString().trim();
+
+    const rawOrderType = (
+      req.body.orderType ||
+      req.body.type ||
+      'takeaway'
+    ).toString().toLowerCase().trim();
+
+    let rawItems = req.body.items || req.body.cart || req.body.orderItems || [];
+    if (!Array.isArray(rawItems) && typeof rawItems === 'object' && rawItems !== null) {
+      rawItems = Object.values(rawItems);
+    }
+
+    const rawTableNumber = (req.body.tableNumber || req.body.table || req.body.tableNo || '').toString().trim();
     const rawGuestsCount = req.body.guestsCount ? parseInt(req.body.guestsCount, 10) : 1;
     const rawReservationDate = req.body.reservationDate || '';
     const rawReservationTime = req.body.reservationTime || '';
@@ -32,10 +61,51 @@ const createOrder = async (req, res) => {
     const rawPickupTime = req.body.pickupTime || req.body.pickupSlot || (rawReservationDate && rawReservationTime ? `${rawReservationDate} at ${rawReservationTime}` : 'ASAP (15-20 Mins)');
     const rawVehicleNote = req.body.vehicleNote || '';
     const rawBranch = req.body.branch || req.body.branchName || 'KPHB Colony, Hyderabad';
-    const rawNotes = req.body.notes || '';
-    const rawPaymentMethod = req.body.paymentMethod || 'UPI';
-    const rawPaymentStatus = req.body.paymentStatus && req.body.paymentStatus.toLowerCase().includes('paid') ? 'Paid' : (req.body.paymentStatus || 'Pending');
+    const rawNotes = req.body.notes || req.body.specialInstructions || req.body.instructions || '';
     const appliedPromo = req.body.appliedPromo || req.body.promoCode;
+
+    // Flexible Payment Method normalization
+    let normalizedPaymentMethod = 'UPI';
+    const pmInput = (req.body.paymentMethod || req.body.payment_mode || req.body.paymentMode || '').toString().toLowerCase().trim();
+    if (pmInput.includes('cash on delivery') || pmInput === 'cod') {
+      normalizedPaymentMethod = 'Cash on Delivery';
+    } else if (pmInput.includes('cash') || pmInput.includes('offline')) {
+      normalizedPaymentMethod = 'Cash';
+    } else if (pmInput.includes('hotel') || pmInput.includes('dine') || pmInput.includes('table')) {
+      normalizedPaymentMethod = 'Pay at Hotel';
+    } else if (pmInput.includes('card') || pmInput.includes('debit') || pmInput.includes('credit')) {
+      normalizedPaymentMethod = 'Card';
+    } else if (pmInput.includes('online') || pmInput.includes('razorpay') || pmInput.includes('stripe') || pmInput.includes('paytm') || pmInput.includes('netbanking')) {
+      normalizedPaymentMethod = 'Online Payment';
+    } else if (pmInput.includes('upi') || pmInput.includes('gpay') || pmInput.includes('phonepe') || pmInput.includes('bhim')) {
+      normalizedPaymentMethod = 'UPI';
+    } else if (req.body.paymentMethod) {
+      normalizedPaymentMethod = req.body.paymentMethod;
+    }
+
+    // Flexible Payment Status normalization
+    let normalizedPaymentStatus = 'Pending';
+    const psInput = (req.body.paymentStatus || '').toString().toLowerCase().trim();
+    if (psInput.includes('paid') || psInput.includes('success') || psInput.includes('complete') || psInput.includes('captured')) {
+      normalizedPaymentStatus = 'Paid';
+    } else if (psInput.includes('fail') || psInput.includes('error') || psInput.includes('declin')) {
+      normalizedPaymentStatus = 'Failed';
+    } else if (psInput.includes('refund')) {
+      normalizedPaymentStatus = 'Refunded';
+    } else {
+      normalizedPaymentStatus = 'Pending';
+    }
+
+    // Determine normalized order type
+    let type = 'takeaway';
+    const isDineIn = rawOrderType.includes('dine') || rawOrderType.includes('table') || rawOrderType.includes('booking') || rawOrderType.includes('seat');
+    if (isDineIn) {
+      type = 'dine-in';
+    } else if (rawOrderType.includes('delivery') || rawOrderType.includes('home') || rawOrderType.includes('door')) {
+      type = 'delivery';
+    } else {
+      type = 'takeaway';
+    }
 
     if (!rawCustomerName) {
       return res.status(400).json({
@@ -51,7 +121,7 @@ const createOrder = async (req, res) => {
       });
     }
 
-    if (!rawItems || !Array.isArray(rawItems) || rawItems.length === 0) {
+    if (!rawItems || rawItems.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Order must contain at least one item',
@@ -60,7 +130,7 @@ const createOrder = async (req, res) => {
 
     // Check store setting if open
     const settings = await Setting.findOne({ key: 'global_settings' });
-    if (settings && !settings.isOpen) {
+    if (settings && settings.isOpen === false) {
       return res.status(400).json({
         success: false,
         message: settings.closedMessage || 'Subbayya Gari Hotel is currently closed for new orders.',
@@ -72,27 +142,33 @@ const createOrder = async (req, res) => {
     const orderItems = [];
 
     for (const item of rawItems) {
-      const quantity = Math.max(1, parseInt(item.qty || item.quantity || 1, 10));
+      const quantity = Math.max(1, parseInt(item.qty || item.quantity || item.count || 1, 10));
       let dbItem = null;
 
-      if (item.id || item._id || item.menuItemId) {
-        const lookupId = item._id || item.menuItemId || item.id;
-        if (typeof lookupId === 'string' && lookupId.match(/^[0-9a-fA-F]{24}$/)) {
-          dbItem = await MenuItem.findById(lookupId);
-        } else {
-          dbItem = await MenuItem.findOne({ itemId: lookupId });
-        }
+      const lookupId = item._id || item.menuItemId || item.itemId || item.id;
+      if (lookupId) {
+        try {
+          const lookupStr = String(lookupId).trim();
+          if (lookupStr.match(/^[0-9a-fA-F]{24}$/)) {
+            dbItem = await MenuItem.findById(lookupStr);
+          } else {
+            dbItem = await MenuItem.findOne({ itemId: lookupStr });
+          }
+        } catch (e) {}
       }
 
-      if (!dbItem && item.name) {
-        dbItem = await MenuItem.findOne({ name: new RegExp(`^${item.name.trim()}$`, 'i') });
+      const itemNameRaw = item.name || item.itemName || item.title || '';
+      if (!dbItem && itemNameRaw) {
+        try {
+          dbItem = await MenuItem.findOne({ name: new RegExp(`^${itemNameRaw.trim()}$`, 'i') });
+        } catch (e) {}
       }
 
-      const itemPrice = dbItem ? dbItem.price : Number(item.price || 0);
-      const itemName = dbItem ? dbItem.name : (item.name || 'Special Item');
-      const itemTelugu = dbItem ? dbItem.telugu : (item.telugu || '');
-      const itemImage = dbItem ? dbItem.image : (item.image || '');
-      const itemCategory = dbItem ? dbItem.category : (item.category || '');
+      const itemPrice = dbItem ? dbItem.price : Number(item.price || item.unitPrice || 0);
+      const itemName = dbItem ? dbItem.name : (itemNameRaw || 'Godavari Special Feast');
+      const itemTelugu = dbItem ? dbItem.telugu : (item.telugu || item.teluguName || '');
+      const itemImage = dbItem ? dbItem.image : (item.image || item.imageUrl || item.img || '');
+      const itemCategory = dbItem ? dbItem.category : (item.category || 'Special');
       const itemSubtotal = itemPrice * quantity;
 
       calculatedSubtotal += itemSubtotal;
@@ -109,10 +185,14 @@ const createOrder = async (req, res) => {
       });
     }
 
+    if (calculatedSubtotal === 0 && Number(req.body.totalAmount || req.body.subtotal) > 0) {
+      calculatedSubtotal = Number(req.body.subtotal || req.body.totalAmount);
+    }
+
     // Normalize Delivery Address
-    const rawDeliveryAddress = req.body.deliveryAddress;
+    const rawDeliveryAddress = req.body.deliveryAddress || req.body.address || req.body.shippingAddress;
     let normAddress = '';
-    let normLandmark = req.body.deliveryLandmark || '';
+    let normLandmark = req.body.deliveryLandmark || req.body.landmark || '';
     let normCity = 'Hyderabad';
     let normPincode = '';
     let normLocationUrl = req.body.gpsMapUrl || req.body.locationUrl || '';
@@ -121,11 +201,11 @@ const createOrder = async (req, res) => {
     if (typeof rawDeliveryAddress === 'string') {
       normAddress = rawDeliveryAddress;
     } else if (typeof rawDeliveryAddress === 'object' && rawDeliveryAddress !== null) {
-      normAddress = rawDeliveryAddress.address || '';
+      normAddress = rawDeliveryAddress.address || rawDeliveryAddress.street || '';
       normLandmark = rawDeliveryAddress.landmark || normLandmark;
       normCity = rawDeliveryAddress.city || normCity;
-      normPincode = rawDeliveryAddress.pincode || normPincode;
-      normLocationUrl = rawDeliveryAddress.locationUrl || normLocationUrl;
+      normPincode = rawDeliveryAddress.pincode || rawDeliveryAddress.zip || normPincode;
+      normLocationUrl = rawDeliveryAddress.locationUrl || rawDeliveryAddress.gpsMapUrl || normLocationUrl;
       normDistanceKm = rawDeliveryAddress.distanceKm || normDistanceKm;
     }
 
@@ -135,11 +215,9 @@ const createOrder = async (req, res) => {
     }
 
     // Calculate packaging, delivery, tax, discount
-    const isDineIn = rawOrderType === 'dine-in' || rawOrderType === 'table-booking';
     const packagingFee = isDineIn ? 0 : (settings ? (settings.packagingFee || 30) : 30);
     
     let deliveryCharge = 0;
-    const type = isDineIn ? 'dine-in' : (rawOrderType || 'takeaway');
     if (type === 'delivery') {
       const distance = normDistanceKm || 2;
       const baseFee = settings ? (settings.deliveryFeeBase || 30) : 30;
@@ -156,10 +234,10 @@ const createOrder = async (req, res) => {
       discount = Math.round(calculatedSubtotal * 0.10);
     }
 
-    const grandTotal = calculatedSubtotal + packagingFee + deliveryCharge - discount;
+    const grandTotal = Math.max(0, calculatedSubtotal + packagingFee + deliveryCharge - discount);
 
     let orderNumber = null;
-    if (typeof req.body.id === 'string' && req.body.id.startsWith('SGH-')) {
+    if (typeof req.body.id === 'string' && req.body.id.toUpperCase().startsWith('SGH-')) {
       const existing = await Order.findOne({ orderNumber: req.body.id.toUpperCase() });
       if (!existing) orderNumber = req.body.id.toUpperCase();
     }
@@ -191,8 +269,8 @@ const createOrder = async (req, res) => {
       deliveryCharge,
       discount,
       totalAmount: grandTotal,
-      paymentMethod: rawPaymentMethod || (isDineIn ? 'Pay at Hotel' : 'UPI'),
-      paymentStatus: rawPaymentStatus,
+      paymentMethod: normalizedPaymentMethod || (isDineIn ? 'Pay at Hotel' : 'UPI'),
+      paymentStatus: normalizedPaymentStatus,
       orderStatus: 'Pending',
       deliveryAddress: {
         address: normAddress,

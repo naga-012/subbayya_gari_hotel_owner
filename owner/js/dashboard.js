@@ -223,4 +223,9 @@ document.addEventListener('DOMContentLoaded', () => {
     () => loadDashboardData(), // On new order
     () => loadDashboardData()  // On status update
   );
+
+  // Fallback periodic polling every 8 seconds
+  setInterval(() => {
+    loadDashboardData();
+  }, 8000);
 });

@@ -3,9 +3,20 @@
  */
 
 // Dynamic Backend Base URL
-const BACKEND_BASE = (window.location.protocol === 'file:' || (window.location.hostname === 'localhost' && window.location.port !== '5000') || window.location.port === '5500')
-  ? 'http://localhost:5000'
-  : (window.location.origin.includes('onrender.com') ? window.location.origin : '');
+const BACKEND_BASE = (() => {
+  if (typeof window === 'undefined') return 'http://localhost:5000';
+  // If served directly from the backend server port (e.g. 5000) or relative
+  if (window.location.port === '5000') {
+    return window.location.origin;
+  }
+  // If hosted on a cloud platform (Render, etc.) without port or on standard port
+  if (window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && window.location.protocol !== 'file:') {
+    return window.location.origin;
+  }
+  // Local development servers (Live Server 5500, Vite 5173, Next 3000, file://, etc.)
+  const host = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') ? 'localhost' : (window.location.hostname || 'localhost');
+  return `http://${host}:5000`;
+})();
 
 const API_BASE = `${BACKEND_BASE}/api`;
 

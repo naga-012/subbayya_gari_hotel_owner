@@ -139,8 +139,8 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['Cash', 'UPI', 'Card', 'Online Payment', 'Cash on Delivery', 'Pay at Hotel'],
       default: 'UPI',
+      trim: true,
     },
     paymentStatus: {
       type: String,

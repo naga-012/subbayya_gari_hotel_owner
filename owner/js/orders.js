@@ -666,5 +666,10 @@ document.addEventListener('DOMContentLoaded', () => {
     () => loadOrders(),
     () => loadOrders()
   );
+
+  // Fallback continuous polling every 6 seconds to ensure zero missed orders
+  setInterval(() => {
+    loadOrders();
+  }, 6000);
 });
 
