@@ -446,7 +446,7 @@ const getOrders = async (req, res) => {
     const activeFilter = { orderStatus: { $nin: ['Completed', 'Cancelled', 'Rejected'] } };
 
     // Run parallel queries with not-completed / active orders sorted to the top
-    const [total, orders, totalAll, totalDineIn, totalDelivery, totalTakeaway] = await Promise.all([
+    const [total, orders, activeCounts] = await Promise.all([
       Order.countDocuments(filter),
       Order.aggregate([
         { $match: filter },
@@ -473,11 +473,32 @@ const getOrders = async (req, res) => {
         { $skip: skip },
         { $limit: limitNum },
       ]),
-      Order.countDocuments(activeFilter),
-      Order.countDocuments({ orderType: { $in: ['dine-in', 'table-booking'] }, ...activeFilter }),
-      Order.countDocuments({ orderType: 'delivery', ...activeFilter }),
-      Order.countDocuments({ orderType: 'takeaway', ...activeFilter }),
+      Order.aggregate([
+        { $match: activeFilter },
+        {
+          $group: {
+            _id: '$orderType',
+            count: { $sum: 1 },
+          },
+        },
+      ]),
     ]);
+
+    let totalAll = 0;
+    let totalDineIn = 0;
+    let totalDelivery = 0;
+    let totalTakeaway = 0;
+
+    (activeCounts || []).forEach((c) => {
+      totalAll += c.count;
+      if (c._id === 'dine-in' || c._id === 'table-booking') {
+        totalDineIn += c.count;
+      } else if (c._id === 'delivery') {
+        totalDelivery += c.count;
+      } else if (c._id === 'takeaway') {
+        totalTakeaway += c.count;
+      }
+    });
 
     return res.status(200).json({
       success: true,

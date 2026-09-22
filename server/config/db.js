@@ -14,6 +14,10 @@ const connectDB = async () => {
   if (!cached.promise) {
     const opts = {
       serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 25,
+      minPoolSize: 5,
+      socketTimeoutMS: 45000,
+      autoIndex: process.env.NODE_ENV !== 'production',
     };
 
     const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/subbayya_gari_hotel';

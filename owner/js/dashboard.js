@@ -7,50 +7,56 @@ let topItemsChart = null;
 
 async function loadDashboardData() {
   try {
-    // 1. Fetch Stats
-    const statsRes = await authFetch('/api/dashboard/stats');
-    if (statsRes && statsRes.ok) {
-      const { data } = await statsRes.json();
-      document.getElementById('stat-today-orders').textContent = data.todayOrders || 0;
-      document.getElementById('stat-today-revenue').textContent = formatCurrency(data.todayRevenue || 0);
-      document.getElementById('stat-pending-orders').textContent = data.pendingOrders || 0;
-      document.getElementById('stat-preparing-orders').textContent = data.preparingOrders || 0;
-      document.getElementById('stat-ready-orders').textContent = data.readyOrders || 0;
-      document.getElementById('stat-completed-orders').textContent = data.completedOrders || 0;
-      document.getElementById('stat-cancelled-orders').textContent = data.cancelledOrders || 0;
-      document.getElementById('stat-total-customers').textContent = data.totalCustomers || 0;
+    // Fetch all dashboard components concurrently in parallel for 4x faster loading
+    const [statsResult, revenueResult, topResult, ordersResult] = await Promise.allSettled([
+      authFetch('/api/dashboard/stats'),
+      authFetch('/api/dashboard/revenue?days=7'),
+      authFetch('/api/dashboard/top-items?limit=5'),
+      authFetch('/api/orders?limit=8'),
+    ]);
 
-      // Pending badge in sidebar
-      const pendingBadge = document.getElementById('sidebar-pending-badge');
-      if (pendingBadge) {
-        if (data.pendingOrders > 0) {
-          pendingBadge.style.display = 'inline-block';
-          pendingBadge.textContent = data.pendingOrders;
-        } else {
-          pendingBadge.style.display = 'none';
+    // 1. Process Stats
+    if (statsResult.status === 'fulfilled' && statsResult.value && statsResult.value.ok) {
+      const { data } = await statsResult.value.json();
+      if (data) {
+        document.getElementById('stat-today-orders').textContent = data.todayOrders || 0;
+        document.getElementById('stat-today-revenue').textContent = formatCurrency(data.todayRevenue || 0);
+        document.getElementById('stat-pending-orders').textContent = data.pendingOrders || 0;
+        document.getElementById('stat-preparing-orders').textContent = data.preparingOrders || 0;
+        document.getElementById('stat-ready-orders').textContent = data.readyOrders || 0;
+        document.getElementById('stat-completed-orders').textContent = data.completedOrders || 0;
+        document.getElementById('stat-cancelled-orders').textContent = data.cancelledOrders || 0;
+        document.getElementById('stat-total-customers').textContent = data.totalCustomers || 0;
+
+        // Pending badge in sidebar
+        const pendingBadge = document.getElementById('sidebar-pending-badge');
+        if (pendingBadge) {
+          if (data.pendingOrders > 0) {
+            pendingBadge.style.display = 'inline-block';
+            pendingBadge.textContent = data.pendingOrders;
+          } else {
+            pendingBadge.style.display = 'none';
+          }
         }
       }
     }
 
-    // 2. Fetch Revenue Chart Data
-    const revenueRes = await authFetch('/api/dashboard/revenue?days=7');
-    if (revenueRes && revenueRes.ok) {
-      const { data } = await revenueRes.json();
-      renderRevenueChart(data);
+    // 2. Process Revenue Chart Data
+    if (revenueResult.status === 'fulfilled' && revenueResult.value && revenueResult.value.ok) {
+      const { data } = await revenueResult.value.json();
+      if (data) renderRevenueChart(data);
     }
 
-    // 3. Fetch Top Items Data
-    const topRes = await authFetch('/api/dashboard/top-items?limit=5');
-    if (topRes && topRes.ok) {
-      const { data } = await topRes.json();
-      renderTopItems(data);
+    // 3. Process Top Items Data
+    if (topResult.status === 'fulfilled' && topResult.value && topResult.value.ok) {
+      const { data } = await topResult.value.json();
+      if (data) renderTopItems(data);
     }
 
-    // 4. Fetch Recent Orders & Channel Counts
-    const ordersRes = await authFetch('/api/orders?limit=8');
-    if (ordersRes && ordersRes.ok) {
-      const { data, typeCounts } = await ordersRes.json();
-      renderRecentOrdersTable(data);
+    // 4. Process Recent Orders & Channel Counts
+    if (ordersResult.status === 'fulfilled' && ordersResult.value && ordersResult.value.ok) {
+      const { data, typeCounts } = await ordersResult.value.json();
+      renderRecentOrdersTable(data || []);
 
       // Synchronize loud continuous sound alarm for any pending orders
       if (typeof syncPendingOrdersAlarm === 'function') {

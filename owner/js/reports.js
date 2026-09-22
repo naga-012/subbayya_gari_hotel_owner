@@ -8,26 +8,31 @@ async function loadReports() {
   const days = document.getElementById('report-range')?.value || '7';
 
   try {
-    // 1. Fetch Revenue Timeline
-    const revRes = await authFetch(`/api/dashboard/revenue?days=${days}`);
-    if (revRes && revRes.ok) {
-      const { data } = await revRes.json();
-      renderReportsChart(data);
-      calculateReportMetrics(data);
+    const [revResult, topResult, sumResult] = await Promise.allSettled([
+      authFetch(`/api/dashboard/revenue?days=${days}`),
+      authFetch('/api/dashboard/top-items?limit=10'),
+      authFetch('/api/dashboard/order-summary'),
+    ]);
+
+    // 1. Process Revenue Timeline
+    if (revResult.status === 'fulfilled' && revResult.value && revResult.value.ok) {
+      const { data } = await revResult.value.json();
+      if (data) {
+        renderReportsChart(data);
+        calculateReportMetrics(data);
+      }
     }
 
-    // 2. Fetch Top Items
-    const topRes = await authFetch('/api/dashboard/top-items?limit=10');
-    if (topRes && topRes.ok) {
-      const { data } = await topRes.json();
-      renderReportsTopItems(data);
+    // 2. Process Top Items
+    if (topResult.status === 'fulfilled' && topResult.value && topResult.value.ok) {
+      const { data } = await topResult.value.json();
+      if (data) renderReportsTopItems(data);
     }
 
-    // 3. Fetch Order Breakdown Summary
-    const sumRes = await authFetch('/api/dashboard/order-summary');
-    if (sumRes && sumRes.ok) {
-      const { data } = await sumRes.json();
-      renderOrderBreakdown(data);
+    // 3. Process Order Breakdown Summary
+    if (sumResult.status === 'fulfilled' && sumResult.value && sumResult.value.ok) {
+      const { data } = await sumResult.value.json();
+      if (data) renderOrderBreakdown(data);
     }
   } catch (error) {
     console.error('Error loading reports:', error);

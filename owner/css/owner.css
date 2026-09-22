@@ -3,8 +3,6 @@
    Design System: Heritage Godavari Gold & Modern Slate Glassmorphism
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
 :root {
   --font-primary: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-heading: 'Cinzel', serif;
@@ -138,17 +136,25 @@ body {
 }
 
 .brand-emblem {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-gold));
+  width: 42px;
+  height: 42px;
+  background: #FFFFFF;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FFF;
-  font-size: 1.4rem;
-  font-weight: 800;
-  box-shadow: 0 4px 10px rgba(194, 65, 12, 0.4);
+  overflow: hidden;
+  padding: 2px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.brand-emblem img,
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .brand-info {
