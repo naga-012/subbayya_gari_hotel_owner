@@ -141,6 +141,15 @@ async function toggleStock(itemId, isAvailable) {
       const item = allMenuItems.find((i) => i._id === itemId);
       if (item) item.isAvailable = isAvailable;
       renderMenu();
+
+      // Broadcast to customer site in real-time
+      try {
+        if (typeof BroadcastChannel !== 'undefined') {
+          const bc = new BroadcastChannel('sgh_order_channel');
+          bc.postMessage({ type: 'menu_updated', timestamp: Date.now() });
+        }
+        localStorage.setItem('sgh_menu_update_event', JSON.stringify({ type: 'menu_updated', timestamp: Date.now() }));
+      } catch (e) {}
     } else {
       alert('Failed to update stock status');
       loadMenu();
@@ -218,6 +227,16 @@ async function saveMenuItem(e) {
     if (res && res.ok) {
       closeMenuModal();
       loadMenu();
+
+      // Broadcast to customer site in real-time
+      try {
+        if (typeof BroadcastChannel !== 'undefined') {
+          const bc = new BroadcastChannel('sgh_order_channel');
+          bc.postMessage({ type: 'menu_updated', timestamp: Date.now() });
+        }
+        localStorage.setItem('sgh_menu_update_event', JSON.stringify({ type: 'menu_updated', timestamp: Date.now() }));
+      } catch (e) {}
+
       alert(`Item "${payload.name}" saved successfully!`);
     } else {
       const err = await res.json();

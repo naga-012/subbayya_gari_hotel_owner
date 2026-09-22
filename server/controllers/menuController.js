@@ -1,6 +1,55 @@
 const MenuItem = require('../models/MenuItem');
 const Order = require('../models/Order');
 
+// Helper to asynchronously forward menu changes to customer server
+const forwardMenuUpdateToCustomer = (item) => {
+  try {
+    const payload = JSON.stringify({
+      id: item.itemId || item._id,
+      name: item.name,
+      price: item.price,
+      originalPrice: item.originalPrice,
+      image: item.image,
+      inStock: item.isAvailable,
+      isAvailable: item.isAvailable,
+      description: item.description,
+      category: item.category,
+    });
+
+    const targets = [
+      'https://subbayyagar-hotel.onrender.com/api/menu/update',
+      'http://127.0.0.1:3000/api/menu/update',
+    ];
+
+    targets.forEach((targetUrl) => {
+      try {
+        const u = new URL(targetUrl);
+        const client = u.protocol === 'https:' ? require('https') : require('http');
+        const req = client.request(
+          {
+            hostname: u.hostname,
+            port: u.port || (u.protocol === 'https:' ? 443 : 80),
+            path: u.pathname,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(payload),
+            },
+            timeout: 5000,
+          },
+          (res) => {
+            console.log(`[Menu Forward] Sent to ${targetUrl}: ${res.statusCode}`);
+          }
+        );
+        req.on('error', () => {});
+        req.write(payload);
+        req.end();
+      } catch (e) {}
+    });
+  } catch (err) {}
+};
+
+
 // @desc    Get all menu items
 // @route   GET /api/menu
 // @access  Public (filtered) / Owner (full)
@@ -211,6 +260,8 @@ const updateMenuItem = async (req, res) => {
       req.io.emit('menu_refresh');
     }
 
+    forwardMenuUpdateToCustomer(item);
+
     return res.status(200).json({
       success: true,
       message: 'Menu item updated successfully',
@@ -258,6 +309,8 @@ const toggleMenuItemStatus = async (req, res) => {
       req.io.emit('menu_change', item);
       req.io.emit('menu_refresh');
     }
+
+    forwardMenuUpdateToCustomer(item);
 
     return res.status(200).json({
       success: true,
