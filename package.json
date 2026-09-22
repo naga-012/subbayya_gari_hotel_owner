@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server/server.js",
     "dev": "node server/server.js",
-    "seed": "node server/utils/seed.js"
+    "seed": "node server/utils/seed.js",
+    "test": "node test_app.js"
   },
   "keywords": [
     "restaurant",
