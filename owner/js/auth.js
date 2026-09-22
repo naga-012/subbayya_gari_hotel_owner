@@ -126,6 +126,8 @@ let soundEnabled = localStorage.getItem('sgh_sound_enabled') !== 'false';
 let orderAlertInterval = null;
 let activePendingOrderNumber = null;
 let sharedAudioCtx = null;
+let titleBlinkInterval = null;
+const originalDocTitle = typeof document !== 'undefined' ? document.title : 'Subbayya Gari Hotel - Owner Panel';
 
 function getAudioContext() {
   if (!sharedAudioCtx) {
@@ -140,11 +142,14 @@ function getAudioContext() {
   return sharedAudioCtx;
 }
 
-// Unlock audio context on first user interaction to comply with browser autoplay policy
-['click', 'touchstart', 'keydown'].forEach((evt) => {
+// Unlock audio context on any user interaction to comply with browser autoplay policy
+['click', 'touchstart', 'keydown', 'mousedown'].forEach((evt) => {
   document.addEventListener(evt, () => {
-    getAudioContext();
-  }, { once: true });
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+  }, { passive: true });
 });
 
 function toggleAudioNotification() {
@@ -159,47 +164,59 @@ function toggleAudioNotification() {
   }
 }
 
-// Play loud dual-tone kitchen buzzer chime
+// Play loud, sharp, energetic 4-tone restaurant kitchen order chime & buzzer
 function playSingleLoudBeep() {
   if (!soundEnabled) return;
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
 
-    // High energetic alert frequencies (880Hz A5 + 1318.5Hz E6)
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
+    const now = ctx.currentTime;
+
+    // 1. Dual Oscillators for rich, piercing restaurant kitchen chime
     const osc1 = ctx.createOscillator();
     const osc2 = ctx.createOscillator();
-    const gain = ctx.createGain();
+    const gainNode = ctx.createGain();
 
     osc1.type = 'triangle';
-    osc1.frequency.setValueAtTime(880, ctx.currentTime);
-    osc1.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.12);
-    osc1.frequency.setValueAtTime(1760, ctx.currentTime + 0.24);
+    osc2.type = 'square'; // Adds high harmonic cut-through for kitchen noise
 
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(440, ctx.currentTime);
-    osc2.frequency.setValueAtTime(587.33, ctx.currentTime + 0.12);
-    osc2.frequency.setValueAtTime(880, ctx.currentTime + 0.24);
+    // 4-stage ascending energetic chime: A5 (880Hz) -> D6 (1174Hz) -> G6 (1568Hz) -> C7 (2093Hz)
+    osc1.frequency.setValueAtTime(880, now);
+    osc1.frequency.setValueAtTime(1174.66, now + 0.12);
+    osc1.frequency.setValueAtTime(1567.98, now + 0.24);
+    osc1.frequency.setValueAtTime(2093.00, now + 0.36);
 
-    // Loud volume (gain 0.95)
-    gain.gain.setValueAtTime(0.95, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.7);
+    osc2.frequency.setValueAtTime(440, now);
+    osc2.frequency.setValueAtTime(587.33, now + 0.12);
+    osc2.frequency.setValueAtTime(783.99, now + 0.24);
+    osc2.frequency.setValueAtTime(1046.50, now + 0.36);
 
-    osc1.connect(gain);
-    osc2.connect(gain);
-    gain.connect(ctx.destination);
+    // High energetic volume gain curve
+    gainNode.gain.setValueAtTime(1.0, now);
+    gainNode.gain.setValueAtTime(0.85, now + 0.36);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
 
-    osc1.start();
-    osc2.start();
-    osc1.stop(ctx.currentTime + 0.7);
-    osc2.stop(ctx.currentTime + 0.7);
+    osc1.connect(gainNode);
+    osc2.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 0.85);
+    osc2.stop(now + 0.85);
   } catch (e) {
     console.log('Audio alert error:', e);
   }
 }
 
 // Start continuous loud order alarm until accepted
-function startLoudOrderAlarm(order) {
+function startLoudOrderAlarm(order, pendingCount = 1) {
+  if (!order || !order.orderNumber) return;
   activePendingOrderNumber = order.orderNumber;
 
   // Stop any previous ringing interval
@@ -208,15 +225,25 @@ function startLoudOrderAlarm(order) {
     orderAlertInterval = null;
   }
 
-  // Play immediately and loop every 1.2s until accepted
+  // Play immediately and repeat continuously every 1.3s until accepted
   playSingleLoudBeep();
   if (soundEnabled) {
     orderAlertInterval = setInterval(() => {
       playSingleLoudBeep();
-    }, 1200);
+    }, 1300);
   }
 
-  showOrderAlertBanner(order);
+  // Blinking browser tab title
+  if (titleBlinkInterval) clearInterval(titleBlinkInterval);
+  let blinkFlag = false;
+  titleBlinkInterval = setInterval(() => {
+    blinkFlag = !blinkFlag;
+    document.title = blinkFlag
+      ? `🚨 NEW ORDER #${order.orderNumber} - ACCEPT NOW!`
+      : `🔔 (${pendingCount} PENDING) Subbayya Gari Hotel`;
+  }, 900);
+
+  showOrderAlertBanner(order, pendingCount);
 }
 
 // Stop loud order alarm
@@ -224,6 +251,11 @@ function stopOrderAlarm() {
   if (orderAlertInterval) {
     clearInterval(orderAlertInterval);
     orderAlertInterval = null;
+  }
+  if (titleBlinkInterval) {
+    clearInterval(titleBlinkInterval);
+    titleBlinkInterval = null;
+    document.title = originalDocTitle;
   }
   activePendingOrderNumber = null;
 
@@ -233,10 +265,31 @@ function stopOrderAlarm() {
   }
 }
 
+// Synchronize pending orders with the loud alarm
+function syncPendingOrdersAlarm(ordersList) {
+  if (!Array.isArray(ordersList)) return;
+  const pending = ordersList.filter(
+    (o) => o && (o.orderStatus === 'Pending' || o.status === 'Pending' || o.status === 'Received')
+  );
+
+  if (pending.length > 0) {
+    // If not currently alarming or alarmed order was accepted, alarm on the latest pending order
+    if (!orderAlertInterval || !activePendingOrderNumber || !pending.some(p => p.orderNumber === activePendingOrderNumber)) {
+      startLoudOrderAlarm(pending[0], pending.length);
+    } else {
+      // Update banner with current count
+      showOrderAlertBanner(pending[0], pending.length);
+    }
+  } else {
+    // All orders accepted or completed
+    if (orderAlertInterval) {
+      stopOrderAlarm();
+    }
+  }
+}
+
 // Accept order directly from the alert banner & stop sound
 async function acceptOrderFromAlert(orderNumber) {
-  stopOrderAlarm();
-
   try {
     const res = await authFetch(`/api/orders/${orderNumber}/status`, {
       method: 'PATCH',
@@ -244,18 +297,28 @@ async function acceptOrderFromAlert(orderNumber) {
     });
 
     if (res && res.ok) {
-      // If loadOrders or loadDashboardData exists on current page, refresh
+      // Refresh active page data
       if (typeof loadOrders === 'function') loadOrders();
       if (typeof loadDashboardData === 'function') loadDashboardData();
       if (typeof loadOrderDetails === 'function') loadOrderDetails();
+
+      // Check if there are remaining pending orders
+      const checkRes = await authFetch('/api/orders?status=Pending');
+      if (checkRes && checkRes.ok) {
+        const { data } = await checkRes.json();
+        syncPendingOrdersAlarm(data || []);
+      } else {
+        stopOrderAlarm();
+      }
     }
   } catch (e) {
     console.error('Error accepting order from alert:', e);
+    stopOrderAlarm();
   }
 }
 
 // Show Floating Notification Banner with Accept button
-function showOrderAlertBanner(order) {
+function showOrderAlertBanner(order, pendingCount = 1) {
   let banner = document.getElementById('order-alert-banner');
   if (!banner) {
     banner = document.createElement('div');
@@ -271,20 +334,22 @@ function showOrderAlertBanner(order) {
       ? '🛵 Home Delivery'
       : '🥡 Takeaway';
 
+  const countBadge = pendingCount > 1 ? `<span style="background:#EF4444; color:#fff; font-size:0.75rem; padding:2px 8px; border-radius:12px; margin-left:6px;">${pendingCount} Pending</span>` : '';
+
   banner.innerHTML = `
     <div class="alert-icon-ring">🔔</div>
     <div class="alert-info">
-      <div class="alert-title">🔔 NEW INCOMING ORDER #${order.orderNumber}</div>
+      <div class="alert-title">🔔 NEW INCOMING ORDER #${order.orderNumber} ${countBadge}</div>
       <div class="alert-text"><strong>${order.customerName}</strong> • ${formatCurrency(order.totalAmount)}</div>
       <div style="font-size: 0.75rem; color: var(--color-gold); margin-top: 2px;">${typeLabel}</div>
     </div>
     <div class="alert-actions">
-      <button class="btn-alert-accept" onclick="acceptOrderFromAlert('${order.orderNumber}')">
+      <button class="btn-alert-accept" onclick="acceptOrderFromAlert('${order.orderNumber}')" style="background:#10B981; color:#fff; font-weight:800; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-size:0.9rem; box-shadow:0 0 15px rgba(16,185,129,0.5); display:flex; align-items:center; gap:6px; width:100%; justify-content:center;">
         ✅ Accept Order & Stop Sound
       </button>
-      <div style="display: flex; gap: 6px; margin-top: 4px;">
-        <a href="order-details.html?id=${order.orderNumber}" class="btn-alert-view" style="flex: 1;">View Details</a>
-        <button class="btn-alert-view" onclick="stopOrderAlarm()" style="cursor: pointer;" title="Mute alarm without accepting">🔕 Mute</button>
+      <div style="display: flex; gap: 6px; margin-top: 6px;">
+        <a href="order-details.html?id=${order.orderNumber}" class="btn-alert-view" style="flex: 1; text-align:center; padding:6px; background:rgba(255,255,255,0.1); color:#fff; border-radius:6px; text-decoration:none; font-size:0.78rem;">View Details</a>
+        <button class="btn-alert-view" onclick="stopOrderAlarm()" style="cursor: pointer; padding:6px 12px; background:rgba(239,68,68,0.2); color:#FCA5A5; border:1px solid rgba(239,68,68,0.4); border-radius:6px; font-size:0.78rem;" title="Mute alarm without accepting">🔕 Mute</button>
       </div>
     </div>
   `;
@@ -325,12 +390,15 @@ function initOwnerSocket(onNewOrderCallback, onStatusUpdateCallback) {
 
     const handleStatusUpdate = (data) => {
       console.log('[Socket] Order Status Updated:', data);
-      if (data && data.orderStatus && data.orderStatus !== 'Pending') {
-        stopOrderAlarm();
-      }
       if (typeof onStatusUpdateCallback === 'function') {
         onStatusUpdateCallback(data);
       }
+      // Check remaining pending orders after status change
+      authFetch('/api/orders?status=Pending').then(r => r ? r.json() : null).then(res => {
+        if (res && res.data) {
+          syncPendingOrdersAlarm(res.data);
+        }
+      }).catch(() => {});
     };
 
     socket.on('order_status_updated', handleStatusUpdate);

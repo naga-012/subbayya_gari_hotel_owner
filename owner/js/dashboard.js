@@ -52,6 +52,11 @@ async function loadDashboardData() {
       const { data, typeCounts } = await ordersRes.json();
       renderRecentOrdersTable(data);
 
+      // Synchronize loud continuous sound alarm for any pending orders
+      if (typeof syncPendingOrdersAlarm === 'function') {
+        syncPendingOrdersAlarm(data || []);
+      }
+
       if (typeCounts) {
         const dineInEl = document.getElementById('dash-dinein-count');
         const deliveryEl = document.getElementById('dash-delivery-count');

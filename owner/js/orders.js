@@ -147,6 +147,11 @@ async function loadOrders() {
 
       renderTableHeader(orderType);
       renderOrdersTable(currentOrders, orderType);
+
+      // Synchronize loud continuous sound alarm for pending unaccepted orders
+      if (typeof syncPendingOrdersAlarm === 'function') {
+        syncPendingOrdersAlarm(currentOrders || []);
+      }
     } else {
       if (tbody) {
         tbody.innerHTML = `

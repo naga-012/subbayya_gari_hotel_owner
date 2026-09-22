@@ -264,6 +264,11 @@ async function updateStatus(newStatus) {
 
     if (res && res.ok) {
       loadOrderDetails();
+      if (typeof authFetch === 'function' && typeof syncPendingOrdersAlarm === 'function') {
+        authFetch('/api/orders?status=Pending').then(r => r ? r.json() : null).then(resData => {
+          syncPendingOrdersAlarm(resData?.data || []);
+        }).catch(() => {});
+      }
     } else {
       const err = await res.json();
       alert(`Error updating status: ${err.message}`);
