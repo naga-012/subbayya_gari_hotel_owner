@@ -5,7 +5,12 @@
   <title>Subbayya Gari Hotel - Owner Portal</title>
   <link rel="icon" type="image/png" href="images/logo.png" />
   <script>
-    const token = localStorage.getItem('sgh_owner_token');
+    // Clear any legacy persistent storage so closing the app always requires login
+    localStorage.removeItem('sgh_owner_token');
+    localStorage.removeItem('sgh_owner_user');
+    localStorage.removeItem('sgh_owner_branch');
+
+    const token = sessionStorage.getItem('sgh_owner_token');
     if (token) {
       window.location.replace('dashboard.html');
     } else {

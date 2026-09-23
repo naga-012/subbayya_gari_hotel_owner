@@ -100,7 +100,7 @@ async function loadOrders() {
   const activeBtn = document.getElementById(`btn-date-${dateRange}`);
   if (activeBtn) activeBtn.classList.add('active');
 
-  const activeBranch = typeof getActiveBranch === 'function' ? getActiveBranch() : localStorage.getItem('sgh_owner_branch');
+  const activeBranch = typeof getActiveBranch === 'function' ? getActiveBranch() : (sessionStorage.getItem('sgh_owner_branch') || 'KPHB');
 
   const cardSubtitleEl = document.getElementById('table-card-subtitle');
   if (cardSubtitleEl) {

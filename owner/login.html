@@ -159,10 +159,14 @@
         const data = await response.json();
 
         if (response.ok && data.success) {
-          localStorage.setItem('sgh_owner_token', data.token);
+          localStorage.removeItem('sgh_owner_token');
+          localStorage.removeItem('sgh_owner_user');
+          localStorage.removeItem('sgh_owner_branch');
+
+          sessionStorage.setItem('sgh_owner_token', data.token);
           const userData = { ...data.user, branch: branch };
-          localStorage.setItem('sgh_owner_user', JSON.stringify(userData));
-          localStorage.setItem('sgh_owner_branch', branch);
+          sessionStorage.setItem('sgh_owner_user', JSON.stringify(userData));
+          sessionStorage.setItem('sgh_owner_branch', branch);
           window.location.href = 'dashboard.html';
         } else {
           errorDiv.textContent = data.message || 'Login failed. Please check your credentials.';

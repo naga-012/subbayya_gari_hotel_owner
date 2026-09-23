@@ -22,33 +22,32 @@ const API_BASE = `${BACKEND_BASE}/api`;
 
 // Branch Management Helpers
 function getActiveBranch() {
-  let branch = localStorage.getItem('sgh_owner_branch');
+  let branch = sessionStorage.getItem('sgh_owner_branch');
   if (branch && branch !== 'All Branches' && branch !== 'all') {
     return branch;
   }
   try {
-    const userStr = localStorage.getItem('sgh_owner_user');
+    const userStr = sessionStorage.getItem('sgh_owner_user');
     if (userStr) {
       const user = JSON.parse(userStr);
       if (user && user.branch && user.branch !== 'All Branches' && user.branch !== 'all') {
-        localStorage.setItem('sgh_owner_branch', user.branch);
+        sessionStorage.setItem('sgh_owner_branch', user.branch);
         return user.branch;
       }
     }
   } catch (e) {}
-  localStorage.setItem('sgh_owner_branch', 'KPHB');
   return 'KPHB';
 }
 
 function setActiveBranch(branch) {
   if (!branch || branch === 'All Branches' || branch === 'all') return;
-  localStorage.setItem('sgh_owner_branch', branch);
+  sessionStorage.setItem('sgh_owner_branch', branch);
   try {
-    const userStr = localStorage.getItem('sgh_owner_user');
+    const userStr = sessionStorage.getItem('sgh_owner_user');
     if (userStr) {
       const user = JSON.parse(userStr);
       user.branch = branch;
-      localStorage.setItem('sgh_owner_user', JSON.stringify(user));
+      sessionStorage.setItem('sgh_owner_user', JSON.stringify(user));
     }
   } catch (e) {}
   renderActiveBranchBadge();
@@ -140,7 +139,7 @@ function selectAndApplyBranch(branch) {
   setActiveBranch(branch);
   closeSwitchBranchModal();
   if (typeof updateProfileUI === 'function') {
-    const userStr = localStorage.getItem('sgh_owner_user');
+    const userStr = sessionStorage.getItem('sgh_owner_user');
     if (userStr) {
       try { updateProfileUI(JSON.parse(userStr)); } catch (e) {}
     }
@@ -155,8 +154,13 @@ function selectAndApplyBranch(branch) {
 
 // Check Authentication on Owner Pages
 function checkAuth() {
-  const token = localStorage.getItem('sgh_owner_token');
-  const userStr = localStorage.getItem('sgh_owner_user');
+  // Clear any legacy persistent storage so closing the app always requires login
+  localStorage.removeItem('sgh_owner_token');
+  localStorage.removeItem('sgh_owner_user');
+  localStorage.removeItem('sgh_owner_branch');
+
+  const token = sessionStorage.getItem('sgh_owner_token');
+  const userStr = sessionStorage.getItem('sgh_owner_user');
 
   // If on login page and already logged in, redirect to dashboard
   if (window.location.pathname.includes('login.html')) {
@@ -200,7 +204,7 @@ function updateProfileUI(user) {
   if (nameEl) nameEl.textContent = user.name || 'Owner';
   if (avatarEl) avatarEl.textContent = (user.name || 'O').charAt(0).toUpperCase();
   if (roleEl) {
-    roleEl.innerHTML = activeBranch && activeBranch !== 'All Branches'
+    roleEl.innerHTML = activeBranch
       ? `📍 <strong style="color:var(--color-gold);">${activeBranch}</strong>`
       : 'Hotel Administrator';
   }
@@ -210,14 +214,18 @@ function updateProfileUI(user) {
 
 // Owner Logout
 function logoutOwner() {
+  sessionStorage.removeItem('sgh_owner_token');
+  sessionStorage.removeItem('sgh_owner_user');
+  sessionStorage.removeItem('sgh_owner_branch');
   localStorage.removeItem('sgh_owner_token');
   localStorage.removeItem('sgh_owner_user');
+  localStorage.removeItem('sgh_owner_branch');
   window.location.href = 'login.html';
 }
 
 // Authenticated Fetch Helper with Automatic Branch Context
 async function authFetch(url, options = {}) {
-  const token = localStorage.getItem('sgh_owner_token');
+  const token = sessionStorage.getItem('sgh_owner_token');
   const activeBranch = getActiveBranch();
 
   const headers = {
