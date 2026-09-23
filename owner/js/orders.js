@@ -114,9 +114,7 @@ async function loadOrders() {
         : dateRange === 'yesterday'
         ? "yesterday's orders"
         : 'all matching orders';
-    const branchSuffix = (activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches')
-      ? ` • ${activeBranch} Branch`
-      : ' • All Branches';
+    const branchSuffix = activeBranch ? ` • ${activeBranch} Branch` : '';
     cardSubtitleEl.textContent = `Showing ${dateLabel}${branchSuffix}`;
   }
 
@@ -126,7 +124,7 @@ async function loadOrders() {
   if (paymentStatus !== 'all') params.append('paymentStatus', paymentStatus);
   if (dateRange !== 'all') params.append('dateRange', dateRange);
   if (search.trim()) params.append('search', search.trim());
-  if (activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches') {
+  if (activeBranch) {
     params.append('branch', activeBranch);
   }
 

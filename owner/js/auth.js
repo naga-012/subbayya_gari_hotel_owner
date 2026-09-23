@@ -22,23 +22,26 @@ const API_BASE = `${BACKEND_BASE}/api`;
 
 // Branch Management Helpers
 function getActiveBranch() {
-  const branch = localStorage.getItem('sgh_owner_branch');
-  if (branch) return branch;
+  let branch = localStorage.getItem('sgh_owner_branch');
+  if (branch && branch !== 'All Branches' && branch !== 'all') {
+    return branch;
+  }
   try {
     const userStr = localStorage.getItem('sgh_owner_user');
     if (userStr) {
       const user = JSON.parse(userStr);
-      if (user && user.branch) {
+      if (user && user.branch && user.branch !== 'All Branches' && user.branch !== 'all') {
         localStorage.setItem('sgh_owner_branch', user.branch);
         return user.branch;
       }
     }
   } catch (e) {}
-  return 'All Branches';
+  localStorage.setItem('sgh_owner_branch', 'KPHB');
+  return 'KPHB';
 }
 
 function setActiveBranch(branch) {
-  if (!branch) return;
+  if (!branch || branch === 'All Branches' || branch === 'all') return;
   localStorage.setItem('sgh_owner_branch', branch);
   try {
     const userStr = localStorage.getItem('sgh_owner_user');
@@ -78,12 +81,12 @@ function renderActiveBranchBadge() {
     headerRight.insertBefore(badge, headerRight.firstChild);
   }
 
-  badge.innerHTML = `<span>📍</span> <span>${activeBranch}</span> <span style="font-size:0.68rem; opacity:0.8; text-decoration:underline; margin-left:2px;">(Switch)</span>`;
+  badge.innerHTML = `<span>📍</span> <span>${activeBranch} Branch</span> <span style="font-size:0.68rem; opacity:0.8; text-decoration:underline; margin-left:2px;">(Switch)</span>`;
 }
 
 function promptSwitchBranch() {
   const current = getActiveBranch();
-  const branches = ['Kukatpally', 'KPHB', 'Vanasthalipuram', 'Ameerpet', 'Madhapur', 'All Branches'];
+  const branches = ['Kukatpally', 'KPHB', 'Vanasthalipuram'];
 
   let modal = document.getElementById('branch-switch-modal');
   if (!modal) {
@@ -107,8 +110,8 @@ function promptSwitchBranch() {
   const buttonsHtml = branches.map((b) => {
     const isSelected = b.toLowerCase() === current.toLowerCase();
     return `
-      <button onclick="selectAndApplyBranch('${b}')" style="width: 100%; text-align: left; padding: 12px 16px; margin-bottom: 8px; border-radius: 8px; border: 1px solid ${isSelected ? '#F59E0B' : 'rgba(255,255,255,0.1)'}; background: ${isSelected ? 'rgba(245,158,11,0.2)' : 'rgba(30,41,59,0.8)'}; color: ${isSelected ? '#F59E0B' : '#F8FAFC'}; font-weight: ${isSelected ? '800' : '600'}; font-size: 0.92rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;">
-        <span>📍 ${b} ${b !== 'All Branches' ? 'Branch' : '(Master View)'}</span>
+      <button onclick="selectAndApplyBranch('${b}')" style="width: 100%; text-align: left; padding: 14px 18px; margin-bottom: 10px; border-radius: 8px; border: 1px solid ${isSelected ? '#F59E0B' : 'rgba(255,255,255,0.1)'}; background: ${isSelected ? 'rgba(245,158,11,0.2)' : 'rgba(30,41,59,0.8)'}; color: ${isSelected ? '#F59E0B' : '#F8FAFC'}; font-weight: ${isSelected ? '800' : '600'}; font-size: 0.95rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;">
+        <span>📍 ${b} Branch</span>
         ${isSelected ? '<span style="color:#10B981;">✓ Active</span>' : ''}
       </button>
     `;
