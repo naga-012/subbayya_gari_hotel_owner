@@ -2,11 +2,21 @@ const Order = require('../models/Order');
 const User = require('../models/User');
 const MenuItem = require('../models/MenuItem');
 
+// Helper to get branch filter from request
+const getBranchFilter = (req) => {
+  const activeBranch = (req.query.branch || req.headers['x-owner-branch'] || '').trim();
+  if (activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches') {
+    return { branch: new RegExp(activeBranch, 'i') };
+  }
+  return {};
+};
+
 // @desc    Get dashboard summary statistics
 // @route   GET /api/dashboard/stats
 // @access  Private / Owner
 const getStats = async (req, res) => {
   try {
+    const branchFilter = getBranchFilter(req);
     const now = new Date();
     const istOffsetMs = 5.5 * 60 * 60 * 1000;
     const nowIST = new Date(now.getTime() + istOffsetMs);
@@ -16,7 +26,7 @@ const getStats = async (req, res) => {
     // Parallel single-pass aggregation pipelines for zero loading time
     const [todayAgg, statusAgg, lifetimeAgg, registeredCustomersCount, uniquePhones] = await Promise.all([
       Order.aggregate([
-        { $match: { createdAt: { $gte: startOfToday, $lte: endOfToday } } },
+        { $match: { createdAt: { $gte: startOfToday, $lte: endOfToday }, ...branchFilter } },
         {
           $group: {
             _id: null,
@@ -30,6 +40,7 @@ const getStats = async (req, res) => {
         },
       ]),
       Order.aggregate([
+        ...(Object.keys(branchFilter).length > 0 ? [{ $match: branchFilter }] : []),
         {
           $group: {
             _id: '$orderStatus',
@@ -41,6 +52,7 @@ const getStats = async (req, res) => {
         {
           $match: {
             orderStatus: { $in: ['Completed', 'Ready', 'Out for Delivery', 'Preparing', 'Accepted'] },
+            ...branchFilter,
           },
         },
         {
@@ -52,7 +64,7 @@ const getStats = async (req, res) => {
         },
       ]),
       User.countDocuments({ role: 'customer' }),
-      Order.distinct('phone'),
+      Order.distinct('phone', branchFilter),
     ]);
 
     const statusMap = {};
@@ -101,6 +113,7 @@ const getStats = async (req, res) => {
 // @access  Private / Owner
 const getRevenue = async (req, res) => {
   try {
+    const branchFilter = getBranchFilter(req);
     const { days = 7 } = req.query;
     const numDays = parseInt(days, 10) || 7;
 
@@ -113,6 +126,7 @@ const getRevenue = async (req, res) => {
         $match: {
           createdAt: { $gte: startDate },
           orderStatus: { $nin: ['Cancelled', 'Rejected'] },
+          ...branchFilter,
         },
       },
       {
@@ -173,6 +187,7 @@ const getRevenue = async (req, res) => {
 // @access  Private / Owner
 const getTopItems = async (req, res) => {
   try {
+    const branchFilter = getBranchFilter(req);
     const { limit = 10 } = req.query;
     const limitNum = parseInt(limit, 10) || 10;
 
@@ -180,6 +195,7 @@ const getTopItems = async (req, res) => {
       {
         $match: {
           orderStatus: { $nin: ['Cancelled', 'Rejected'] },
+          ...branchFilter,
         },
       },
       { $unwind: '$items' },
@@ -221,14 +237,20 @@ const getTopItems = async (req, res) => {
 // @access  Private / Owner
 const getOrderSummary = async (req, res) => {
   try {
+    const branchFilter = getBranchFilter(req);
+    const matchStage = Object.keys(branchFilter).length > 0 ? [{ $match: branchFilter }] : [];
+
     const [byStatus, byType, byPayment] = await Promise.all([
       Order.aggregate([
+        ...matchStage,
         { $group: { _id: '$orderStatus', count: { $sum: 1 }, total: { $sum: '$totalAmount' } } },
       ]),
       Order.aggregate([
+        ...matchStage,
         { $group: { _id: '$orderType', count: { $sum: 1 }, total: { $sum: '$totalAmount' } } },
       ]),
       Order.aggregate([
+        ...matchStage,
         { $group: { _id: '$paymentMethod', count: { $sum: 1 }, total: { $sum: '$totalAmount' } } },
       ]),
     ]);

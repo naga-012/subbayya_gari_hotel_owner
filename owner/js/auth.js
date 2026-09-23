@@ -20,6 +20,136 @@ const BACKEND_BASE = (() => {
 
 const API_BASE = `${BACKEND_BASE}/api`;
 
+// Branch Management Helpers
+function getActiveBranch() {
+  const branch = localStorage.getItem('sgh_owner_branch');
+  if (branch) return branch;
+  try {
+    const userStr = localStorage.getItem('sgh_owner_user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (user && user.branch) {
+        localStorage.setItem('sgh_owner_branch', user.branch);
+        return user.branch;
+      }
+    }
+  } catch (e) {}
+  return 'All Branches';
+}
+
+function setActiveBranch(branch) {
+  if (!branch) return;
+  localStorage.setItem('sgh_owner_branch', branch);
+  try {
+    const userStr = localStorage.getItem('sgh_owner_user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      user.branch = branch;
+      localStorage.setItem('sgh_owner_user', JSON.stringify(user));
+    }
+  } catch (e) {}
+  renderActiveBranchBadge();
+}
+
+function renderActiveBranchBadge() {
+  const activeBranch = getActiveBranch();
+  const headerRight = document.querySelector('.admin-header .header-right');
+  if (!headerRight) return;
+
+  let badge = document.getElementById('header-branch-pill');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'header-branch-pill';
+    badge.className = 'header-branch-pill';
+    badge.style.display = 'inline-flex';
+    badge.style.alignItems = 'center';
+    badge.style.gap = '6px';
+    badge.style.background = 'rgba(245, 158, 11, 0.15)';
+    badge.style.border = '1px solid rgba(245, 158, 11, 0.4)';
+    badge.style.padding = '6px 14px';
+    badge.style.borderRadius = '20px';
+    badge.style.fontSize = '0.82rem';
+    badge.style.color = '#F59E0B';
+    badge.style.fontWeight = '700';
+    badge.style.cursor = 'pointer';
+    badge.title = 'Click to switch active hotel branch';
+    badge.onclick = promptSwitchBranch;
+
+    headerRight.insertBefore(badge, headerRight.firstChild);
+  }
+
+  badge.innerHTML = `<span>📍</span> <span>${activeBranch}</span> <span style="font-size:0.68rem; opacity:0.8; text-decoration:underline; margin-left:2px;">(Switch)</span>`;
+}
+
+function promptSwitchBranch() {
+  const current = getActiveBranch();
+  const branches = ['Kukatpally', 'KPHB', 'Vanasthalipuram', 'Ameerpet', 'Madhapur', 'All Branches'];
+
+  let modal = document.getElementById('branch-switch-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'branch-switch-modal';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.background = 'rgba(15, 23, 42, 0.85)';
+    modal.style.backdropFilter = 'blur(6px)';
+    modal.style.zIndex = '99999';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.padding = '20px';
+    document.body.appendChild(modal);
+  }
+
+  const buttonsHtml = branches.map((b) => {
+    const isSelected = b.toLowerCase() === current.toLowerCase();
+    return `
+      <button onclick="selectAndApplyBranch('${b}')" style="width: 100%; text-align: left; padding: 12px 16px; margin-bottom: 8px; border-radius: 8px; border: 1px solid ${isSelected ? '#F59E0B' : 'rgba(255,255,255,0.1)'}; background: ${isSelected ? 'rgba(245,158,11,0.2)' : 'rgba(30,41,59,0.8)'}; color: ${isSelected ? '#F59E0B' : '#F8FAFC'}; font-weight: ${isSelected ? '800' : '600'}; font-size: 0.92rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;">
+        <span>📍 ${b} ${b !== 'All Branches' ? 'Branch' : '(Master View)'}</span>
+        ${isSelected ? '<span style="color:#10B981;">✓ Active</span>' : ''}
+      </button>
+    `;
+  }).join('');
+
+  modal.innerHTML = `
+    <div style="background: #1E293B; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; width: 100%; max-width: 420px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="color: #F8FAFC; font-size: 1.15rem; font-family: var(--font-heading); margin: 0;">🏢 Switch Branch</h3>
+        <button onclick="closeSwitchBranchModal()" style="background: transparent; border: none; color: #94A3B8; font-size: 1.2rem; cursor: pointer;">✕</button>
+      </div>
+      <p style="color: #94A3B8; font-size: 0.82rem; margin-bottom: 16px;">Select which branch orders and kitchen pipeline to manage:</p>
+      <div>${buttonsHtml}</div>
+      <button onclick="closeSwitchBranchModal()" style="width: 100%; padding: 10px; margin-top: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #CBD5E1; cursor: pointer; font-size: 0.85rem;">Cancel</button>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+function closeSwitchBranchModal() {
+  const modal = document.getElementById('branch-switch-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function selectAndApplyBranch(branch) {
+  setActiveBranch(branch);
+  closeSwitchBranchModal();
+  if (typeof updateProfileUI === 'function') {
+    const userStr = localStorage.getItem('sgh_owner_user');
+    if (userStr) {
+      try { updateProfileUI(JSON.parse(userStr)); } catch (e) {}
+    }
+  }
+  if (typeof loadOrders === 'function') loadOrders();
+  if (typeof loadDashboardData === 'function') loadDashboardData();
+  if (typeof loadOrderDetails === 'function') loadOrderDetails();
+  if (socket && socket.connected) {
+    socket.emit('join_owner', { branch });
+  }
+}
+
 // Check Authentication on Owner Pages
 function checkAuth() {
   const token = localStorage.getItem('sgh_owner_token');
@@ -61,8 +191,18 @@ function checkAuth() {
 function updateProfileUI(user) {
   const nameEl = document.getElementById('owner-user-name');
   const avatarEl = document.getElementById('owner-avatar-letter');
+  const roleEl = document.querySelector('.owner-role');
+  const activeBranch = getActiveBranch();
+
   if (nameEl) nameEl.textContent = user.name || 'Owner';
   if (avatarEl) avatarEl.textContent = (user.name || 'O').charAt(0).toUpperCase();
+  if (roleEl) {
+    roleEl.innerHTML = activeBranch && activeBranch !== 'All Branches'
+      ? `📍 <strong style="color:var(--color-gold);">${activeBranch}</strong>`
+      : 'Hotel Administrator';
+  }
+
+  renderActiveBranchBadge();
 }
 
 // Owner Logout
@@ -72,18 +212,29 @@ function logoutOwner() {
   window.location.href = 'login.html';
 }
 
-// Authenticated Fetch Helper
+// Authenticated Fetch Helper with Automatic Branch Context
 async function authFetch(url, options = {}) {
   const token = localStorage.getItem('sgh_owner_token');
+  const activeBranch = getActiveBranch();
+
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(activeBranch && activeBranch !== 'all' ? { 'X-Owner-Branch': activeBranch } : {}),
     ...(options.headers || {}),
   };
 
-  const targetUrl = url.startsWith('http')
+  let targetUrl = url.startsWith('http')
     ? url
     : (url.startsWith('/api') ? `${BACKEND_BASE}${url}` : `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`);
+
+  // Automatically append branch to GET query parameters if not present
+  if ((!options.method || options.method.toUpperCase() === 'GET') && activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches') {
+    if (!targetUrl.includes('branch=')) {
+      const sep = targetUrl.includes('?') ? '&' : '?';
+      targetUrl += `${sep}branch=${encodeURIComponent(activeBranch)}`;
+    }
+  }
 
   const response = await fetch(targetUrl, { ...options, headers });
 
@@ -365,18 +516,30 @@ function initOwnerSocket(onNewOrderCallback, onStatusUpdateCallback) {
     socket = socketOrigin ? io(socketOrigin, { transports: ['websocket', 'polling'] }) : io({ transports: ['websocket', 'polling'] });
     socket.on('connect', () => {
       console.log('[Socket] Connected to server');
-      socket.emit('join_owner');
+      socket.emit('join_owner', { branch: getActiveBranch() });
     });
 
     socket.on('reconnect', () => {
       console.log('[Socket] Reconnected to server');
-      socket.emit('join_owner');
+      socket.emit('join_owner', { branch: getActiveBranch() });
       if (typeof onNewOrderCallback === 'function') onNewOrderCallback();
     });
 
     const handleNewOrder = (data) => {
       console.log('[Socket] New Order Received:', data);
       const orderData = (data && data.order) ? data.order : data;
+      if (!orderData) return;
+
+      const activeBranch = getActiveBranch();
+      if (activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches') {
+        const orderBranch = (orderData.branch || '').toLowerCase();
+        const curBranch = activeBranch.toLowerCase();
+        if (!orderBranch.includes(curBranch) && !curBranch.includes(orderBranch)) {
+          console.log(`[Socket] Order #${orderData.orderNumber} belongs to '${orderData.branch}', ignored for current active branch '${activeBranch}'`);
+          return;
+        }
+      }
+
       if (orderData && orderData.orderNumber) {
         startLoudOrderAlarm(orderData);
       }
@@ -390,6 +553,16 @@ function initOwnerSocket(onNewOrderCallback, onStatusUpdateCallback) {
 
     const handleStatusUpdate = (data) => {
       console.log('[Socket] Order Status Updated:', data);
+      const orderData = (data && data.order) ? data.order : data;
+      const activeBranch = getActiveBranch();
+      if (orderData && activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches') {
+        const orderBranch = (orderData.branch || '').toLowerCase();
+        const curBranch = activeBranch.toLowerCase();
+        if (orderBranch && !orderBranch.includes(curBranch) && !curBranch.includes(orderBranch)) {
+          return;
+        }
+      }
+
       if (typeof onStatusUpdateCallback === 'function') {
         onStatusUpdateCallback(data);
       }

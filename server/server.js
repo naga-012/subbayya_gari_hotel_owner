@@ -80,9 +80,16 @@ app.get('*', (req, res, next) => {
 io.on('connection', (socket) => {
   console.log(`[Socket.IO] Client connected: ${socket.id}`);
 
-  socket.on('join_owner', () => {
+  socket.on('join_owner', (data) => {
     socket.join('owner_room');
-    console.log(`[Socket.IO] Socket ${socket.id} joined owner_room`);
+    const branchName = typeof data === 'string' ? data : (data && data.branch ? data.branch : null);
+    if (branchName && branchName.toLowerCase() !== 'all' && branchName.toLowerCase() !== 'all branches') {
+      const cleanBranch = branchName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      socket.join(`owner_branch_${cleanBranch}`);
+      console.log(`[Socket.IO] Socket ${socket.id} joined owner_room & owner_branch_${cleanBranch}`);
+    } else {
+      console.log(`[Socket.IO] Socket ${socket.id} joined owner_room`);
+    }
   });
 
   socket.on('join_order_tracking', (orderNumber) => {

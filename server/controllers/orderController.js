@@ -341,9 +341,16 @@ const getOrders = async (req, res) => {
       search,
       page = 1,
       limit = 50,
+      branch,
     } = req.query;
 
+    const activeBranch = (branch || req.headers['x-owner-branch'] || '').trim();
     const andConditions = [];
+
+    // Branch filter (e.g. Kukatpally, KPHB, Vanasthalipuram)
+    if (activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches') {
+      andConditions.push({ branch: new RegExp(activeBranch, 'i') });
+    }
 
     // Status filter
     if (status && status !== 'all') {
@@ -435,6 +442,9 @@ const getOrders = async (req, res) => {
 
     // Active / In-progress (Not Completed) filter for live tab badge counts
     const activeFilter = { orderStatus: { $nin: ['Completed', 'Cancelled', 'Rejected'] } };
+    if (activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches') {
+      activeFilter.branch = new RegExp(activeBranch, 'i');
+    }
 
     // Run parallel queries with not-completed / active orders sorted to the top
     const [total, orders, activeCounts] = await Promise.all([

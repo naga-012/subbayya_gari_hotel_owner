@@ -100,6 +100,8 @@ async function loadOrders() {
   const activeBtn = document.getElementById(`btn-date-${dateRange}`);
   if (activeBtn) activeBtn.classList.add('active');
 
+  const activeBranch = typeof getActiveBranch === 'function' ? getActiveBranch() : localStorage.getItem('sgh_owner_branch');
+
   const cardSubtitleEl = document.getElementById('table-card-subtitle');
   if (cardSubtitleEl) {
     const dateLabel =
@@ -112,7 +114,10 @@ async function loadOrders() {
         : dateRange === 'yesterday'
         ? "yesterday's orders"
         : 'all matching orders';
-    cardSubtitleEl.textContent = `Showing ${dateLabel} from database`;
+    const branchSuffix = (activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches')
+      ? ` • ${activeBranch} Branch`
+      : ' • All Branches';
+    cardSubtitleEl.textContent = `Showing ${dateLabel}${branchSuffix}`;
   }
 
   const params = new URLSearchParams();
@@ -121,6 +126,9 @@ async function loadOrders() {
   if (paymentStatus !== 'all') params.append('paymentStatus', paymentStatus);
   if (dateRange !== 'all') params.append('dateRange', dateRange);
   if (search.trim()) params.append('search', search.trim());
+  if (activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches') {
+    params.append('branch', activeBranch);
+  }
 
   const tbody = document.getElementById('orders-tbody');
 
@@ -505,6 +513,9 @@ function renderOrdersTable(orders, orderType) {
         </td>
         <td>
           ${typeBadge}
+          <div style="font-size: 0.7rem; color: var(--color-gold); margin-top: 4px; font-weight: 600;">
+            📍 ${order.branch || 'KPHB Colony, Hyderabad'}
+          </div>
         </td>
         <td>
           <div>${itemsHtml}</div>

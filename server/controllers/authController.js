@@ -19,7 +19,7 @@ const generateToken = (user) => {
 // @access  Public
 const login = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password, role, branch } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -95,6 +95,7 @@ const login = async (req, res) => {
         role: user.role,
         tier: user.tier,
         loyaltyCoins: user.loyaltyCoins,
+        branch: branch || 'KPHB Colony, Hyderabad',
       },
     });
   } catch (error) {
