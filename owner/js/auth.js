@@ -21,26 +21,73 @@ const BACKEND_BASE = (() => {
 const API_BASE = `${BACKEND_BASE}/api`;
 
 // Branch Management Helpers
+// Comprehensive List of All Hotel Branches
+const ALL_HOTEL_BRANCHES = [
+  {
+    category: 'Global View',
+    branches: [
+      { name: 'All Branches', label: '🌐 All Branches (Master View)' }
+    ]
+  },
+  {
+    category: 'Hyderabad & Telangana',
+    branches: [
+      { name: 'KPHB Colony', label: '📍 KPHB Colony Branch' },
+      { name: 'Kukatpally', label: '📍 Kukatpally Branch' },
+      { name: 'Vanasthalipuram', label: '📍 Vanasthalipuram Branch' },
+      { name: 'Ameerpet', label: '📍 Ameerpet Branch' },
+      { name: 'Madhapur', label: '📍 Madhapur Branch' },
+      { name: 'Kondapur', label: '📍 Kondapur Branch' },
+      { name: 'Gachibowli', label: '📍 Gachibowli Branch' },
+      { name: 'Dilsukhnagar', label: '📍 Dilsukhnagar Branch' },
+      { name: 'Secunderabad', label: '📍 Secunderabad Branch' },
+      { name: 'Attapur', label: '📍 Attapur Branch' },
+      { name: 'Chanda Nagar', label: '📍 Chanda Nagar Branch' },
+      { name: 'AS Rao Nagar', label: '📍 AS Rao Nagar Branch' },
+      { name: 'Warangal', label: '📍 Warangal Branch' }
+    ]
+  },
+  {
+    category: 'Andhra Pradesh',
+    branches: [
+      { name: 'Kakinada (Main)', label: '📍 Kakinada (Main Flagship)' },
+      { name: 'Rajahmundry', label: '📍 Rajahmundry Branch' },
+      { name: 'Vijayawada', label: '📍 Vijayawada Branch' },
+      { name: 'Visakhapatnam', label: '📍 Visakhapatnam (Vizag) Branch' },
+      { name: 'Guntur', label: '📍 Guntur Branch' },
+      { name: 'Tirupati', label: '📍 Tirupati Branch' },
+      { name: 'Nellore', label: '📍 Nellore Branch' },
+      { name: 'Eluru', label: '📍 Eluru Branch' }
+    ]
+  },
+  {
+    category: 'Karnataka',
+    branches: [
+      { name: 'Bengaluru', label: '📍 Bengaluru Branch' }
+    ]
+  }
+];
+
 function getActiveBranch() {
   let branch = sessionStorage.getItem('sgh_owner_branch');
-  if (branch && branch !== 'All Branches' && branch !== 'all') {
+  if (branch) {
     return branch;
   }
   try {
     const userStr = sessionStorage.getItem('sgh_owner_user');
     if (userStr) {
       const user = JSON.parse(userStr);
-      if (user && user.branch && user.branch !== 'All Branches' && user.branch !== 'all') {
+      if (user && user.branch) {
         sessionStorage.setItem('sgh_owner_branch', user.branch);
         return user.branch;
       }
     }
   } catch (e) {}
-  return 'KPHB';
+  return 'KPHB Colony';
 }
 
 function setActiveBranch(branch) {
-  if (!branch || branch === 'All Branches' || branch === 'all') return;
+  if (!branch) return;
   sessionStorage.setItem('sgh_owner_branch', branch);
   try {
     const userStr = sessionStorage.getItem('sgh_owner_user');
@@ -80,12 +127,38 @@ function renderActiveBranchBadge() {
     headerRight.insertBefore(badge, headerRight.firstChild);
   }
 
-  badge.innerHTML = `<span>📍</span> <span>${activeBranch} Branch</span> <span style="font-size:0.68rem; opacity:0.8; text-decoration:underline; margin-left:2px;">(Switch)</span>`;
+  const isAll = (activeBranch || '').toLowerCase().includes('all');
+  const label = isAll ? '🌐 All Branches' : `📍 ${activeBranch} Branch`;
+  badge.innerHTML = `<span>${label}</span> <span style="font-size:0.68rem; opacity:0.8; text-decoration:underline; margin-left:4px;">(Switch)</span>`;
+}
+
+function filterBranchModalList(query) {
+  const q = (query || '').toLowerCase().trim();
+  const buttons = document.querySelectorAll('.branch-modal-option');
+  const categoryHeaders = document.querySelectorAll('.branch-modal-category');
+
+  buttons.forEach(btn => {
+    const name = btn.getAttribute('data-branch-name') || '';
+    if (!q || name.toLowerCase().includes(q)) {
+      btn.style.display = 'flex';
+    } else {
+      btn.style.display = 'none';
+    }
+  });
+
+  categoryHeaders.forEach(header => {
+    const cat = header.getAttribute('data-category');
+    const visibleInCat = document.querySelectorAll(`.branch-modal-option[data-category="${cat}"]:not([style*="display: none"])`);
+    if (visibleInCat.length === 0) {
+      header.style.display = 'none';
+    } else {
+      header.style.display = 'block';
+    }
+  });
 }
 
 function promptSwitchBranch() {
   const current = getActiveBranch();
-  const branches = ['Kukatpally', 'KPHB', 'Vanasthalipuram'];
 
   let modal = document.getElementById('branch-switch-modal');
   if (!modal) {
@@ -106,28 +179,60 @@ function promptSwitchBranch() {
     document.body.appendChild(modal);
   }
 
-  const buttonsHtml = branches.map((b) => {
-    const isSelected = b.toLowerCase() === current.toLowerCase();
-    return `
-      <button onclick="selectAndApplyBranch('${b}')" style="width: 100%; text-align: left; padding: 14px 18px; margin-bottom: 10px; border-radius: 8px; border: 1px solid ${isSelected ? '#F59E0B' : 'rgba(255,255,255,0.1)'}; background: ${isSelected ? 'rgba(245,158,11,0.2)' : 'rgba(30,41,59,0.8)'}; color: ${isSelected ? '#F59E0B' : '#F8FAFC'}; font-weight: ${isSelected ? '800' : '600'}; font-size: 0.95rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;">
-        <span>📍 ${b} Branch</span>
-        ${isSelected ? '<span style="color:#10B981;">✓ Active</span>' : ''}
-      </button>
+  let listHtml = '';
+  ALL_HOTEL_BRANCHES.forEach(group => {
+    listHtml += `
+      <div class="branch-modal-category" data-category="${group.category}" style="font-size: 0.72rem; font-weight: 700; color: #F59E0B; text-transform: uppercase; letter-spacing: 0.08em; margin: 14px 0 6px 4px;">
+        ${group.category}
+      </div>
     `;
-  }).join('');
+
+    group.branches.forEach(b => {
+      const isSelected = b.name.toLowerCase() === (current || '').toLowerCase() || 
+        ((b.name === 'All Branches' || b.name === 'all') && (current || '').toLowerCase().includes('all'));
+      listHtml += `
+        <button class="branch-modal-option" data-category="${group.category}" data-branch-name="${b.name}" onclick="selectAndApplyBranch('${b.name}')" style="width: 100%; text-align: left; padding: 12px 16px; margin-bottom: 8px; border-radius: 8px; border: 1px solid ${isSelected ? '#F59E0B' : 'rgba(255,255,255,0.08)'}; background: ${isSelected ? 'rgba(245,158,11,0.2)' : 'rgba(30,41,59,0.7)'}; color: ${isSelected ? '#F59E0B' : '#F8FAFC'}; font-weight: ${isSelected ? '800' : '600'}; font-size: 0.92rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;">
+          <span>${b.label}</span>
+          ${isSelected ? '<span style="color:#10B981; font-size:0.85rem; font-weight:700;">✓ Active</span>' : ''}
+        </button>
+      `;
+    });
+  });
 
   modal.innerHTML = `
-    <div style="background: #1E293B; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; width: 100%; max-width: 420px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="color: #F8FAFC; font-size: 1.15rem; font-family: var(--font-heading); margin: 0;">🏢 Switch Branch</h3>
-        <button onclick="closeSwitchBranchModal()" style="background: transparent; border: none; color: #94A3B8; font-size: 1.2rem; cursor: pointer;">✕</button>
+    <div style="background: #1E293B; border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 16px; width: 100%; max-width: 480px; max-height: 90vh; display: flex; flex-direction: column; padding: 24px; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="color: #F8FAFC; font-size: 1.15rem; font-family: var(--font-heading); margin: 0; display: flex; align-items: center; gap: 8px;">
+          <span>🏢</span> Switch Branch
+        </h3>
+        <button onclick="closeSwitchBranchModal()" style="background: rgba(255,255,255,0.08); border: none; border-radius: 50%; width: 28px; height: 28px; color: #94A3B8; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
       </div>
-      <p style="color: #94A3B8; font-size: 0.82rem; margin-bottom: 16px;">Select which branch orders and kitchen pipeline to manage:</p>
-      <div>${buttonsHtml}</div>
-      <button onclick="closeSwitchBranchModal()" style="width: 100%; padding: 10px; margin-top: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #CBD5E1; cursor: pointer; font-size: 0.85rem;">Cancel</button>
+      <p style="color: #94A3B8; font-size: 0.82rem; margin-bottom: 12px;">Select which branch orders and kitchen pipeline to manage:</p>
+      
+      <div style="margin-bottom: 12px;">
+        <input 
+          id="branch-modal-search" 
+          type="text" 
+          placeholder="🔍 Search branches (e.g. Kukatpally, Vizag)..." 
+          oninput="filterBranchModalList(this.value)"
+          style="width: 100%; padding: 10px 14px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; color: #FFF; font-size: 0.88rem; outline: none;" 
+        />
+      </div>
+
+      <div id="branch-modal-list-container" style="overflow-y: auto; max-height: 50vh; padding-right: 6px;">
+        ${listHtml}
+      </div>
+
+      <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 10px;">
+        <button onclick="closeSwitchBranchModal()" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #CBD5E1; cursor: pointer; font-size: 0.85rem; font-weight: 600;">Cancel</button>
+      </div>
     </div>
   `;
   modal.style.display = 'flex';
+  setTimeout(() => {
+    const input = document.getElementById('branch-modal-search');
+    if (input) input.focus();
+  }, 50);
 }
 
 function closeSwitchBranchModal() {
