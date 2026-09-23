@@ -77,18 +77,20 @@ app.get('*', (req, res, next) => {
 });
 
 // Socket.IO Events
+const { getBranchRoomKey } = require('./utils/branchHelper');
+
 io.on('connection', (socket) => {
   console.log(`[Socket.IO] Client connected: ${socket.id}`);
 
   socket.on('join_owner', (data) => {
     socket.join('owner_room');
     const branchName = typeof data === 'string' ? data : (data && data.branch ? data.branch : null);
-    if (branchName && branchName.toLowerCase() !== 'all' && branchName.toLowerCase() !== 'all branches') {
-      const cleanBranch = branchName.toLowerCase().replace(/[^a-z0-9]/g, '');
-      socket.join(`owner_branch_${cleanBranch}`);
-      console.log(`[Socket.IO] Socket ${socket.id} joined owner_room & owner_branch_${cleanBranch}`);
+    const roomKey = getBranchRoomKey(branchName);
+    if (roomKey) {
+      socket.join(`owner_branch_${roomKey}`);
+      console.log(`[Socket.IO] Socket ${socket.id} joined owner_room & owner_branch_${roomKey}`);
     } else {
-      console.log(`[Socket.IO] Socket ${socket.id} joined owner_room`);
+      console.log(`[Socket.IO] Socket ${socket.id} joined owner_room (all branches)`);
     }
   });
 

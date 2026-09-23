@@ -1,12 +1,14 @@
 const Order = require('../models/Order');
 const User = require('../models/User');
 const MenuItem = require('../models/MenuItem');
+const { getBranchRegex } = require('../utils/branchHelper');
 
 // Helper to get branch filter from request
 const getBranchFilter = (req) => {
   const activeBranch = (req.query.branch || req.headers['x-owner-branch'] || '').trim();
-  if (activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches') {
-    return { branch: new RegExp(activeBranch, 'i') };
+  const branchRegex = getBranchRegex(activeBranch);
+  if (branchRegex) {
+    return { branch: branchRegex };
   }
   return {};
 };

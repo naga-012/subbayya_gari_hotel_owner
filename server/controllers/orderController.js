@@ -3,6 +3,7 @@ const MenuItem = require('../models/MenuItem');
 const Counter = require('../models/Counter');
 const User = require('../models/User');
 const Setting = require('../models/Setting');
+const { normalizeBranchName, getBranchRegex, getBranchRoomKey } = require('../utils/branchHelper');
 
 // Helper to get next sequence order number
 const getNextOrderNumber = async () => {
@@ -60,7 +61,18 @@ const createOrder = async (req, res) => {
     const rawSeatingPreference = req.body.seatingPreference || 'Traditional Banana Leaf Seating';
     const rawPickupTime = req.body.pickupTime || req.body.pickupSlot || (rawReservationDate && rawReservationTime ? `${rawReservationDate} at ${rawReservationTime}` : 'ASAP (15-20 Mins)');
     const rawVehicleNote = req.body.vehicleNote || '';
-    const rawBranch = req.body.branch || req.body.branchName || 'KPHB Colony, Hyderabad';
+    const rawBranchInput = (
+      req.body.branch ||
+      req.body.branchName ||
+      req.body.selectedBranch ||
+      req.body.hotelBranch ||
+      req.body.outlet ||
+      req.body.pickupBranch ||
+      req.body.deliveryBranch ||
+      (req.body.deliveryAddress && req.body.deliveryAddress.branch) ||
+      'KPHB Colony, Hyderabad'
+    ).toString().trim();
+    const rawBranch = normalizeBranchName(rawBranchInput);
     const rawNotes = req.body.notes || req.body.specialInstructions || req.body.instructions || '';
     const appliedPromo = req.body.appliedPromo || req.body.promoCode;
 
@@ -292,6 +304,7 @@ const createOrder = async (req, res) => {
 
     // Real-time broadcast to owner dashboard & customer tracking via Socket.IO
     if (req.io) {
+      const branchKey = getBranchRoomKey(newOrder.branch);
       const socketPayload = {
         order: newOrder,
         orderId: newOrder._id,
@@ -301,10 +314,16 @@ const createOrder = async (req, res) => {
         orderType: newOrder.orderType,
         orderStatus: newOrder.orderStatus,
         paymentStatus: newOrder.paymentStatus,
+        branch: newOrder.branch,
+        branchKey: branchKey,
         createdAt: newOrder.createdAt,
       };
-      req.io.emit('new_order', socketPayload);
+      // Send to general owner room
       req.io.to('owner_room').emit('new_order', socketPayload);
+      // Send specifically to branch-isolated room
+      if (branchKey) {
+        req.io.to(`owner_branch_${branchKey}`).emit('new_order', socketPayload);
+      }
       req.io.emit('order_created', socketPayload);
       req.io.emit('orders_updated', socketPayload);
       const trackingRoom = `order_${newOrder.orderNumber.toUpperCase()}`;
@@ -347,9 +366,10 @@ const getOrders = async (req, res) => {
     const activeBranch = (branch || req.headers['x-owner-branch'] || '').trim();
     const andConditions = [];
 
-    // Branch filter (e.g. Kukatpally, KPHB, Vanasthalipuram)
-    if (activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches') {
-      andConditions.push({ branch: new RegExp(activeBranch, 'i') });
+    // Branch filter (e.g. Kukatpally, KPHB / KPHP, Vanasthalipuram / Vasanthapuram)
+    const branchRegex = getBranchRegex(activeBranch);
+    if (branchRegex) {
+      andConditions.push({ branch: branchRegex });
     }
 
     // Status filter
@@ -442,8 +462,8 @@ const getOrders = async (req, res) => {
 
     // Active / In-progress (Not Completed) filter for live tab badge counts
     const activeFilter = { orderStatus: { $nin: ['Completed', 'Cancelled', 'Rejected'] } };
-    if (activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches') {
-      activeFilter.branch = new RegExp(activeBranch, 'i');
+    if (branchRegex) {
+      activeFilter.branch = branchRegex;
     }
 
     // Run parallel queries with not-completed / active orders sorted to the top

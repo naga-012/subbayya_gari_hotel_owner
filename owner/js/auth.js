@@ -68,6 +68,30 @@ const ALL_HOTEL_BRANCHES = [
   }
 ];
 
+function isSameBranch(branchA, branchB) {
+  if (!branchA || !branchB) return false;
+  const a = branchA.toLowerCase().trim();
+  const b = branchB.toLowerCase().trim();
+  if (a === 'all' || a === 'all branches' || b === 'all' || b === 'all branches') return true;
+  if (a === b || a.includes(b) || b.includes(a)) return true;
+
+  // KPHP / KPHB alias matching
+  if (/kph[pb]/i.test(a) && /kph[pb]/i.test(b)) return true;
+
+  // Vanasthalipuram / Vasanthapuram alias matching
+  if ((a.includes('vasanth') || a.includes('vanasthal')) && 
+      (b.includes('vasanth') || b.includes('vanasthal'))) return true;
+
+  // Visakhapatnam / Vizag alias matching
+  if ((a.includes('vizag') || a.includes('visakha')) && 
+      (b.includes('vizag') || b.includes('visakha'))) return true;
+
+  // Kukatpally alias matching
+  if (a.includes('kukat') && b.includes('kukat')) return true;
+
+  return false;
+}
+
 function getActiveBranch() {
   let branch = sessionStorage.getItem('sgh_owner_branch');
   if (branch) {
@@ -648,9 +672,8 @@ function initOwnerSocket(onNewOrderCallback, onStatusUpdateCallback) {
 
       const activeBranch = getActiveBranch();
       if (activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches') {
-        const orderBranch = (orderData.branch || '').toLowerCase();
-        const curBranch = activeBranch.toLowerCase();
-        if (!orderBranch.includes(curBranch) && !curBranch.includes(orderBranch)) {
+        const orderBranch = orderData.branch || '';
+        if (!isSameBranch(orderBranch, activeBranch)) {
           console.log(`[Socket] Order #${orderData.orderNumber} belongs to '${orderData.branch}', ignored for current active branch '${activeBranch}'`);
           return;
         }
@@ -672,9 +695,8 @@ function initOwnerSocket(onNewOrderCallback, onStatusUpdateCallback) {
       const orderData = (data && data.order) ? data.order : data;
       const activeBranch = getActiveBranch();
       if (orderData && activeBranch && activeBranch.toLowerCase() !== 'all' && activeBranch.toLowerCase() !== 'all branches') {
-        const orderBranch = (orderData.branch || '').toLowerCase();
-        const curBranch = activeBranch.toLowerCase();
-        if (orderBranch && !orderBranch.includes(curBranch) && !curBranch.includes(orderBranch)) {
+        const orderBranch = orderData.branch || '';
+        if (orderBranch && !isSameBranch(orderBranch, activeBranch)) {
           return;
         }
       }
