@@ -915,6 +915,30 @@ const updateTableNumber = async (req, res) => {
   }
 };
 
+// @desc    Update order branch
+// @route   PATCH /api/orders/:id/branch
+// @access  Private / Owner
+const updateOrderBranch = async (req, res) => {
+  try {
+    const { branch } = req.body;
+    if (!branch) {
+      return res.status(400).json({ success: false, message: 'Branch name is required' });
+    }
+    const finalBranch = normalizeBranchName(branch);
+    const order = await Order.findOneAndUpdate(
+      { orderNumber: req.params.id },
+      { $set: { branch: finalBranch } },
+      { new: true }
+    );
+    if (!order) {
+      return res.status(404).json({ success: false, message: `Order #${req.params.id} not found` });
+    }
+    return res.status(200).json({ success: true, message: `Order updated to branch ${finalBranch}`, data: order });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   createOrder,
   getOrders,
@@ -922,6 +946,7 @@ module.exports = {
   updateOrderStatus,
   updatePaymentStatus,
   updateTableNumber,
+  updateOrderBranch,
   trackOrder,
   deleteOrder,
 };

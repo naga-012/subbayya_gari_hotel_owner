@@ -7,6 +7,7 @@ const {
   updateOrderStatus,
   updatePaymentStatus,
   updateTableNumber,
+  updateOrderBranch,
   trackOrder,
   deleteOrder,
 } = require('../controllers/orderController');
@@ -23,6 +24,7 @@ router.get('/', protect, ownerOnly, getOrders);
 router.patch('/:id/status', protect, ownerOnly, updateOrderStatus);
 router.patch('/:id/payment', protect, ownerOnly, updatePaymentStatus);
 router.patch('/:id/table', protect, ownerOnly, updateTableNumber);
+router.patch('/:id/branch', protect, ownerOnly, updateOrderBranch);
 router.delete('/:id', protect, ownerOnly, deleteOrder);
 
 module.exports = router;
