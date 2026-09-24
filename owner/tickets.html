@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
   <link rel="stylesheet" href="css/owner.css" />
   <style>
-    /* Custom Support Ticket styling extensions */
+    /* Custom Support Ticket styling extensions - White Theme */
     .ticket-stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -18,19 +18,20 @@
       margin-bottom: 24px;
     }
     .ticket-stat-card {
-      background: rgba(25, 20, 15, 0.7);
-      border: 1px solid var(--border-gold-subtle);
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
       border-radius: 12px;
       padding: 18px 20px;
       display: flex;
       align-items: center;
       gap: 16px;
-      backdrop-filter: blur(10px);
-      transition: transform 0.2s ease, border-color 0.2s ease;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     }
     .ticket-stat-card:hover {
       transform: translateY(-2px);
-      border-color: var(--color-gold);
+      border-color: #D97706;
+      box-shadow: 0 6px 18px rgba(217, 119, 6, 0.12);
     }
     .ticket-stat-icon {
       width: 48px;
@@ -41,23 +42,24 @@
       justify-content: center;
       font-size: 1.5rem;
     }
-    .icon-open { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-    .icon-progress { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-    .icon-resolved { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-    .icon-urgent { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .icon-open { background: rgba(217, 119, 6, 0.12); color: #d97706; }
+    .icon-progress { background: rgba(37, 99, 235, 0.12); color: #2563eb; }
+    .icon-resolved { background: rgba(5, 150, 105, 0.12); color: #059669; }
+    .icon-urgent { background: rgba(220, 38, 38, 0.12); color: #dc2626; }
 
     .ticket-stat-val {
       font-size: 1.6rem;
       font-weight: 800;
-      color: #ffffff;
+      color: #0F172A;
       line-height: 1.1;
     }
     .ticket-stat-lbl {
       font-size: 0.8rem;
-      color: var(--text-muted);
+      color: #64748B;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-top: 4px;
+      font-weight: 700;
     }
 
     .ticket-filters-bar {
@@ -66,11 +68,12 @@
       justify-content: space-between;
       align-items: center;
       gap: 16px;
-      background: rgba(20, 16, 12, 0.8);
-      border: 1px solid var(--border-gold-subtle);
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
       border-radius: 12px;
       padding: 14px 20px;
       margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
     }
 
     .status-tabs {
@@ -79,9 +82,9 @@
       overflow-x: auto;
     }
     .tab-btn {
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text-muted);
+      background: #F1F5F9;
+      border: 1px solid #E2E8F0;
+      color: #475569;
       padding: 8px 16px;
       border-radius: 20px;
       font-weight: 600;
@@ -94,39 +97,46 @@
       white-space: nowrap;
     }
     .tab-btn:hover {
-      color: var(--color-gold-light);
-      background: rgba(212, 175, 55, 0.08);
+      color: #0F172A;
+      background: #E2E8F0;
     }
     .tab-btn.active {
-      background: var(--gradient-gold);
-      color: #0d0a07;
+      background: #D97706;
+      color: #FFFFFF;
       font-weight: 700;
-      border-color: var(--color-gold);
+      border-color: #D97706;
+      box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
     }
     .tab-count {
-      background: rgba(0, 0, 0, 0.25);
+      background: rgba(0, 0, 0, 0.12);
       padding: 2px 7px;
       border-radius: 10px;
       font-size: 0.75rem;
+    }
+    .tab-btn.active .tab-count {
+      background: rgba(255, 255, 255, 0.25);
     }
 
     .ticket-search-box {
       display: flex;
       align-items: center;
       gap: 10px;
-      background: rgba(10, 8, 6, 0.6);
-      border: 1px solid var(--border-gold-subtle);
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
       border-radius: 8px;
       padding: 6px 12px;
-      min-width: 260px;
+      min-width: 280px;
     }
     .ticket-search-box input {
       background: transparent;
       border: none;
-      color: #fff;
+      color: #0F172A;
       font-size: 0.9rem;
       outline: none;
       width: 100%;
+    }
+    .ticket-search-box input::placeholder {
+      color: #94A3B8;
     }
 
     .badge-status {
@@ -140,10 +150,10 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    .status-Open { background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
-    .status-In-Progress { background: rgba(59, 130, 246, 0.18); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
-    .status-Resolved { background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
-    .status-Closed { background: rgba(156, 163, 175, 0.18); color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.4); }
+    .status-Open { background: rgba(217, 119, 6, 0.12); color: #b45309; border: 1px solid rgba(217, 119, 6, 0.3); }
+    .status-In-Progress { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; border: 1px solid rgba(37, 99, 235, 0.3); }
+    .status-Resolved { background: rgba(5, 150, 105, 0.12); color: #047857; border: 1px solid rgba(5, 150, 105, 0.3); }
+    .status-Closed { background: rgba(100, 116, 139, 0.12); color: #475569; border: 1px solid rgba(100, 116, 139, 0.3); }
 
     .badge-priority {
       padding: 2px 8px;
@@ -152,10 +162,10 @@
       font-weight: 700;
       text-transform: uppercase;
     }
-    .prio-Urgent { background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid #ef4444; }
-    .prio-High { background: rgba(249, 115, 22, 0.25); color: #fb923c; }
-    .prio-Medium { background: rgba(234, 179, 8, 0.2); color: #facc15; }
-    .prio-Low { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
+    .prio-Urgent { background: rgba(220, 38, 38, 0.15); color: #b91c1c; border: 1px solid #ef4444; }
+    .prio-High { background: rgba(234, 88, 12, 0.15); color: #c2410c; }
+    .prio-Medium { background: rgba(202, 138, 4, 0.15); color: #a16207; }
+    .prio-Low { background: rgba(100, 116, 139, 0.15); color: #475569; }
 
     .action-btn-group {
       display: flex;
@@ -364,38 +374,38 @@
       </div>
 
       <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: rgba(0,0,0,0.3); padding: 14px; border-radius: 8px; border: 1px solid var(--border-gold-subtle);">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #F8FAFC; padding: 14px; border-radius: 8px; border: 1px solid #E2E8F0;">
           <div>
-            <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">CUSTOMER NAME</span>
-            <strong style="color: #fff; font-size: 0.95rem;" id="modal-customer-name">-</strong>
+            <span style="font-size: 0.75rem; color: #64748B; display: block; font-weight:700;">CUSTOMER NAME</span>
+            <strong style="color: #0F172A; font-size: 0.95rem;" id="modal-customer-name">-</strong>
           </div>
           <div>
-            <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">PHONE & EMAIL</span>
-            <strong style="color: var(--color-gold-light); font-size: 0.9rem;" id="modal-customer-contact">-</strong>
+            <span style="font-size: 0.75rem; color: #64748B; display: block; font-weight:700;">PHONE & EMAIL</span>
+            <strong style="color: #D97706; font-size: 0.9rem;" id="modal-customer-contact">-</strong>
           </div>
           <div>
-            <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">ISSUE CATEGORY</span>
-            <span style="color: #fff;" id="modal-ticket-category">-</span>
+            <span style="font-size: 0.75rem; color: #64748B; display: block; font-weight:700;">ISSUE CATEGORY</span>
+            <span style="color: #0F172A; font-weight:600;" id="modal-ticket-category">-</span>
           </div>
           <div>
-            <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">RELATED ORDER #</span>
-            <span style="color: var(--color-gold-light); font-weight: 700;" id="modal-order-number">N/A</span>
+            <span style="font-size: 0.75rem; color: #64748B; display: block; font-weight:700;">RELATED ORDER #</span>
+            <span style="color: #D97706; font-weight: 700;" id="modal-order-number">N/A</span>
           </div>
         </div>
 
         <div>
-          <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">SUBJECT</span>
-          <h4 style="margin: 0 0 8px 0; color: #fff; font-size: 1.05rem;" id="modal-ticket-subject">-</h4>
-          <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">CUSTOMER MESSAGE</span>
-          <div style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; color: #e2e8f0; font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap;" id="modal-ticket-message"></div>
+          <span style="font-size: 0.78rem; color: #64748B; display: block; margin-bottom: 4px; font-weight:700;">SUBJECT</span>
+          <h4 style="margin: 0 0 8px 0; color: #0F172A; font-size: 1.05rem;" id="modal-ticket-subject">-</h4>
+          <span style="font-size: 0.78rem; color: #64748B; display: block; margin-bottom: 4px; font-weight:700;">CUSTOMER MESSAGE</span>
+          <div style="background: #F8FAFC; padding: 12px; border-radius: 8px; color: #1E293B; font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap; border: 1px solid #E2E8F0;" id="modal-ticket-message"></div>
         </div>
 
-        <hr style="border: none; border-top: 1px dashed var(--border-gold-subtle); margin: 4px 0;" />
+        <hr style="border: none; border-top: 1px dashed #CBD5E1; margin: 4px 0;" />
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
-            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">UPDATE TICKET STATUS</label>
-            <select id="modal-update-status" class="form-control" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;">
+            <label style="font-size: 0.8rem; color: #475569; display: block; margin-bottom: 6px; font-weight:700;">UPDATE TICKET STATUS</label>
+            <select id="modal-update-status" class="form-control" style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F172A; padding: 10px; border-radius: 8px; width: 100%;">
               <option value="Open">🟡 Open</option>
               <option value="In Progress">🔵 In Progress</option>
               <option value="Resolved">🟢 Resolved</option>
@@ -403,8 +413,8 @@
             </select>
           </div>
           <div>
-            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">PRIORITY LEVEL</label>
-            <select id="modal-update-priority" class="form-control" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;">
+            <label style="font-size: 0.8rem; color: #475569; display: block; margin-bottom: 6px; font-weight:700;">PRIORITY LEVEL</label>
+            <select id="modal-update-priority" class="form-control" style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F172A; padding: 10px; border-radius: 8px; width: 100%;">
               <option value="Low">Low</option>
               <option value="Medium">Medium</option>
               <option value="High">High</option>
@@ -414,8 +424,8 @@
         </div>
 
         <div>
-          <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">HOTEL OWNER / ADMIN INTERNAL REMARKS</label>
-          <textarea id="modal-owner-notes" rows="3" placeholder="Add resolution notes or actions taken..." style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%; font-family: inherit; font-size: 0.9rem;"></textarea>
+          <label style="font-size: 0.8rem; color: #475569; display: block; margin-bottom: 6px; font-weight:700;">HOTEL OWNER / ADMIN INTERNAL REMARKS</label>
+          <textarea id="modal-owner-notes" rows="3" placeholder="Add resolution notes or actions taken..." style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F172A; padding: 10px; border-radius: 8px; width: 100%; font-family: inherit; font-size: 0.9rem;"></textarea>
         </div>
       </div>
 
@@ -441,23 +451,23 @@
         <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
-              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Customer Name *</label>
-              <input type="text" id="new-cust-name" required placeholder="e.g. Ramesh Kumar" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;" />
+              <label style="font-size: 0.8rem; color: #475569; display: block; margin-bottom: 4px; font-weight:600;">Customer Name *</label>
+              <input type="text" id="new-cust-name" required placeholder="e.g. Ramesh Kumar" style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F172A; padding: 10px; border-radius: 8px; width: 100%;" />
             </div>
             <div>
-              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Phone Number *</label>
-              <input type="tel" id="new-cust-phone" required placeholder="e.g. 9876543210" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;" />
+              <label style="font-size: 0.8rem; color: #475569; display: block; margin-bottom: 4px; font-weight:600;">Phone Number *</label>
+              <input type="tel" id="new-cust-phone" required placeholder="e.g. 9876543210" style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F172A; padding: 10px; border-radius: 8px; width: 100%;" />
             </div>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
-              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Email (Optional)</label>
-              <input type="email" id="new-cust-email" placeholder="ramesh@gmail.com" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;" />
+              <label style="font-size: 0.8rem; color: #475569; display: block; margin-bottom: 4px; font-weight:600;">Email (Optional)</label>
+              <input type="email" id="new-cust-email" placeholder="ramesh@gmail.com" style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F172A; padding: 10px; border-radius: 8px; width: 100%;" />
             </div>
             <div>
-              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Category</label>
-              <select id="new-ticket-category" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;">
+              <label style="font-size: 0.8rem; color: #475569; display: block; margin-bottom: 4px; font-weight:600;">Category</label>
+              <select id="new-ticket-category" style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F172A; padding: 10px; border-radius: 8px; width: 100%;">
                 <option value="Order Issue">Order Issue</option>
                 <option value="Payment & Refund">Payment & Refund</option>
                 <option value="Food Quality">Food Quality</option>
@@ -470,12 +480,12 @@
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
-              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Order Number (If applicable)</label>
-              <input type="text" id="new-ticket-order" placeholder="e.g. ORD-1092" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;" />
+              <label style="font-size: 0.8rem; color: #475569; display: block; margin-bottom: 4px; font-weight:600;">Order Number (If applicable)</label>
+              <input type="text" id="new-ticket-order" placeholder="e.g. ORD-1092" style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F172A; padding: 10px; border-radius: 8px; width: 100%;" />
             </div>
             <div>
-              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Priority</label>
-              <select id="new-ticket-priority" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;">
+              <label style="font-size: 0.8rem; color: #475569; display: block; margin-bottom: 4px; font-weight:600;">Priority</label>
+              <select id="new-ticket-priority" style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F172A; padding: 10px; border-radius: 8px; width: 100%;">
                 <option value="Low">Low</option>
                 <option value="Medium" selected>Medium</option>
                 <option value="High">High</option>
@@ -485,13 +495,13 @@
           </div>
 
           <div>
-            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Subject / Issue Title *</label>
-            <input type="text" id="new-ticket-subject" required placeholder="Brief summary of problem..." style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;" />
+            <label style="font-size: 0.8rem; color: #475569; display: block; margin-bottom: 4px; font-weight:600;">Subject / Issue Title *</label>
+            <input type="text" id="new-ticket-subject" required placeholder="Brief summary of problem..." style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F172A; padding: 10px; border-radius: 8px; width: 100%;" />
           </div>
 
           <div>
-            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Detailed Complaint / Message *</label>
-            <textarea id="new-ticket-message" required rows="4" placeholder="Explain the issue in detail..." style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%; font-family: inherit; font-size: 0.9rem;"></textarea>
+            <label style="font-size: 0.8rem; color: #475569; display: block; margin-bottom: 4px; font-weight:600;">Detailed Complaint / Message *</label>
+            <textarea id="new-ticket-message" required rows="4" placeholder="Explain the issue in detail..." style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F172A; padding: 10px; border-radius: 8px; width: 100%; font-family: inherit; font-size: 0.9rem;"></textarea>
           </div>
         </div>
 

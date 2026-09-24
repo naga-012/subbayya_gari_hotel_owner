@@ -170,26 +170,26 @@ function renderTicketsTable(tickets) {
     return `
       <tr>
         <td>
-          <strong style="color: var(--color-gold); font-family: monospace; font-size: 0.95rem;">${t.ticketId}</strong>
+          <strong style="color: #D97706; font-family: monospace; font-size: 0.95rem;">${t.ticketId}</strong>
         </td>
         <td>
-          <div style="font-weight: 700; color: #ffffff;">${escapeHtml(t.customerName)}</div>
-          <div style="font-size: 0.8rem; color: var(--color-gold-light);">📞 ${escapeHtml(t.phone)}</div>
-          ${t.email ? `<div style="font-size: 0.75rem; color: var(--text-muted);">✉️ ${escapeHtml(t.email)}</div>` : ''}
+          <div style="font-weight: 700; color: #0F172A;">${escapeHtml(t.customerName)}</div>
+          <div style="font-size: 0.8rem; color: #D97706; font-weight: 600;">📞 ${escapeHtml(t.phone)}</div>
+          ${t.email ? `<div style="font-size: 0.75rem; color: #64748B;">✉️ ${escapeHtml(t.email)}</div>` : ''}
         </td>
         <td>
-          <span style="font-size: 0.82rem; background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; color: #e2e8f0;">
+          <span style="font-size: 0.82rem; background: #F1F5F9; border: 1px solid #E2E8F0; padding: 4px 8px; border-radius: 6px; color: #334155; font-weight: 600;">
             ${escapeHtml(t.category)}
           </span>
         </td>
         <td style="max-width: 250px;">
-          <div style="font-weight: 600; color: #f8fafc; font-size: 0.9rem; margin-bottom: 2px;">${escapeHtml(t.subject)}</div>
-          <div style="font-size: 0.8rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          <div style="font-weight: 600; color: #0F172A; font-size: 0.9rem; margin-bottom: 2px;">${escapeHtml(t.subject)}</div>
+          <div style="font-size: 0.8rem; color: #64748B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             ${escapeHtml(t.message)}
           </div>
         </td>
         <td>
-          ${t.orderNumber ? `<a href="orders.html?search=${encodeURIComponent(t.orderNumber)}" style="color: var(--color-gold-light); font-weight:700; font-size: 0.85rem; text-decoration: underline;">${escapeHtml(t.orderNumber)}</a>` : '<span style="color: var(--text-muted); font-size: 0.8rem;">-</span>'}
+          ${t.orderNumber ? `<a href="orders.html?search=${encodeURIComponent(t.orderNumber)}" style="color: #D97706; font-weight:700; font-size: 0.85rem; text-decoration: underline;">${escapeHtml(t.orderNumber)}</a>` : '<span style="color: #94A3B8; font-size: 0.8rem;">-</span>'}
         </td>
         <td>
           <span class="badge-priority ${priorityClass}">${t.priority || 'Medium'}</span>
@@ -197,7 +197,7 @@ function renderTicketsTable(tickets) {
         <td>
           <span class="badge-status ${statusClass}">${t.status || 'Open'}</span>
         </td>
-        <td style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">
+        <td style="font-size: 0.8rem; color: #64748B; white-space: nowrap;">
           ${formattedDate}
         </td>
         <td style="text-align: right;">
