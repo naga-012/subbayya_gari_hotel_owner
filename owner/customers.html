@@ -56,6 +56,10 @@
           <span class="nav-icon">👥</span>
           <span>Customers</span>
         </a>
+        <a href="tickets.html" class="nav-item">
+          <span class="nav-icon">🎧</span>
+          <span>Customer Support</span>
+        </a>
 
         <div class="nav-section-title">Analytics & Config</div>
         <a href="reports.html" class="nav-item">
@@ -93,10 +97,13 @@
           </div>
         </div>
 
-        <div class="header-right">
+        <div class="header-right" style="display: flex; align-items: center; gap: 14px;">
           <div style="font-weight: 700; color: var(--color-gold); font-size: 0.9rem;" id="customers-total-count">
             Loading...
           </div>
+          <button class="btn btn-primary" onclick="openRaiseTicketModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <span>🎧 Raise Support Ticket</span>
+          </button>
         </div>
       </header>
 
@@ -224,6 +231,80 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeCustomerModal()">Close</button>
       </div>
+    </div>
+  </div>
+
+  <!-- RAISE NEW SUPPORT TICKET MODAL -->
+  <div class="modal-backdrop" id="raise-ticket-modal">
+    <div class="modal-box" style="max-width: 550px;">
+      <div class="modal-header">
+        <h3 style="margin: 0; font-family: var(--font-heading); color: var(--color-gold);">🎧 Raise Support Ticket</h3>
+        <button class="modal-close" onclick="closeRaiseTicketModal()">✕</button>
+      </div>
+
+      <form id="raise-ticket-form" onsubmit="submitNewTicketFromCustomers(event)">
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Customer Name *</label>
+              <input type="text" id="new-cust-name" required placeholder="e.g. Ramesh Kumar" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;" />
+            </div>
+            <div>
+              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Phone Number *</label>
+              <input type="tel" id="new-cust-phone" required placeholder="e.g. 9876543210" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;" />
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Email (Optional)</label>
+              <input type="email" id="new-cust-email" placeholder="ramesh@gmail.com" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;" />
+            </div>
+            <div>
+              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Category</label>
+              <select id="new-ticket-category" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;">
+                <option value="Order Issue">Order Issue</option>
+                <option value="Payment & Refund">Payment & Refund</option>
+                <option value="Food Quality">Food Quality</option>
+                <option value="Delivery Delay">Delivery Delay</option>
+                <option value="General Issue" selected>General Issue</option>
+                <option value="Feedback / Request">Feedback / Request</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Order Number (If applicable)</label>
+              <input type="text" id="new-ticket-order" placeholder="e.g. ORD-1092" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;" />
+            </div>
+            <div>
+              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Priority</label>
+              <select id="new-ticket-priority" style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;">
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="High">High</option>
+                <option value="Urgent">🔥 Urgent</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Subject / Issue Title *</label>
+            <input type="text" id="new-ticket-subject" required placeholder="Brief summary of problem..." style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%;" />
+          </div>
+
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Detailed Complaint / Message *</label>
+            <textarea id="new-ticket-message" required rows="4" placeholder="Explain the issue in detail..." style="background: #19140f; border: 1px solid var(--border-gold-subtle); color: #fff; padding: 10px; border-radius: 8px; width: 100%; font-family: inherit; font-size: 0.9rem;"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+          <button type="button" class="btn btn-secondary" onclick="closeRaiseTicketModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Support Ticket</button>
+        </div>
+      </form>
     </div>
   </div>
 

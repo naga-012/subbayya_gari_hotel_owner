@@ -72,9 +72,14 @@ function renderCustomersTable(customers) {
           ${c.lastOrderNumber ? `<a href="order-details.html?id=${c.lastOrderNumber}" style="font-size:0.72rem; color:var(--color-gold);">Last: #${c.lastOrderNumber}</a>` : ''}
         </td>
         <td>
-          <button class="btn btn-secondary btn-sm" onclick="viewCustomerDetails('${c.phone}')">
-            View Details
-          </button>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn btn-secondary btn-sm" onclick="viewCustomerDetails('${c.phone}')">
+              View Details
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="openRaiseTicketForCustomer('${escapeHtml(c.name)}', '${escapeHtml(c.phone)}', '${escapeHtml(c.email)}')">
+              🎧 Raise Ticket
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -166,6 +171,78 @@ function renderCustomerModal(profile) {
 
 function closeCustomerModal() {
   document.getElementById('customer-modal').classList.remove('active');
+}
+
+function openRaiseTicketModal() {
+  const form = document.getElementById('raise-ticket-form');
+  if (form) form.reset();
+  const modal = document.getElementById('raise-ticket-modal');
+  if (modal) modal.classList.add('show');
+}
+
+function openRaiseTicketForCustomer(name, phone, email) {
+  openRaiseTicketModal();
+  if (name && name !== 'N/A') document.getElementById('new-cust-name').value = name;
+  if (phone && phone !== 'N/A') document.getElementById('new-cust-phone').value = phone;
+  if (email && email !== 'N/A') document.getElementById('new-cust-email').value = email;
+}
+
+function closeRaiseTicketModal() {
+  const modal = document.getElementById('raise-ticket-modal');
+  if (modal) modal.classList.remove('show');
+}
+
+async function submitNewTicketFromCustomers(e) {
+  e.preventDefault();
+
+  const customerName = document.getElementById('new-cust-name').value.trim();
+  const phone = document.getElementById('new-cust-phone').value.trim();
+  const email = document.getElementById('new-cust-email').value.trim();
+  const category = document.getElementById('new-ticket-category').value;
+  const orderNumber = document.getElementById('new-ticket-order').value.trim();
+  const priority = document.getElementById('new-ticket-priority').value;
+  const subject = document.getElementById('new-ticket-subject').value.trim();
+  const message = document.getElementById('new-ticket-message').value.trim();
+
+  try {
+    const response = await fetch('/api/tickets/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        customerName,
+        phone,
+        email,
+        category,
+        orderNumber,
+        priority,
+        subject,
+        message,
+      }),
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      alert(` Support Ticket ${result.data.ticketId} Raised Successfully!`);
+      closeRaiseTicketModal();
+    } else {
+      alert(`Failed to create ticket: ${result.message}`);
+    }
+  } catch (err) {
+    console.error('Submit ticket error:', err);
+    alert('Error submitting support ticket');
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
