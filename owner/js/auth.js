@@ -193,7 +193,7 @@ function promptSwitchBranch() {
     modal.style.left = '0';
     modal.style.width = '100vw';
     modal.style.height = '100vh';
-    modal.style.background = 'rgba(15, 23, 42, 0.85)';
+    modal.style.background = 'rgba(15, 23, 42, 0.45)';
     modal.style.backdropFilter = 'blur(6px)';
     modal.style.zIndex = '99999';
     modal.style.display = 'flex';
@@ -206,7 +206,7 @@ function promptSwitchBranch() {
   let listHtml = '';
   ALL_HOTEL_BRANCHES.forEach(group => {
     listHtml += `
-      <div class="branch-modal-category" data-category="${group.category}" style="font-size: 0.72rem; font-weight: 700; color: #F59E0B; text-transform: uppercase; letter-spacing: 0.08em; margin: 14px 0 6px 4px;">
+      <div class="branch-modal-category" data-category="${group.category}" style="font-size: 0.72rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.08em; margin: 14px 0 6px 4px;">
         ${group.category}
       </div>
     `;
@@ -215,23 +215,23 @@ function promptSwitchBranch() {
       const isSelected = b.name.toLowerCase() === (current || '').toLowerCase() || 
         ((b.name === 'All Branches' || b.name === 'all') && (current || '').toLowerCase().includes('all'));
       listHtml += `
-        <button class="branch-modal-option" data-category="${group.category}" data-branch-name="${b.name}" onclick="selectAndApplyBranch('${b.name}')" style="width: 100%; text-align: left; padding: 12px 16px; margin-bottom: 8px; border-radius: 8px; border: 1px solid ${isSelected ? '#F59E0B' : 'rgba(255,255,255,0.08)'}; background: ${isSelected ? 'rgba(245,158,11,0.2)' : 'rgba(30,41,59,0.7)'}; color: ${isSelected ? '#F59E0B' : '#F8FAFC'}; font-weight: ${isSelected ? '800' : '600'}; font-size: 0.92rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;">
+        <button class="branch-modal-option" data-category="${group.category}" data-branch-name="${b.name}" onclick="selectAndApplyBranch('${b.name}')" style="width: 100%; text-align: left; padding: 12px 16px; margin-bottom: 8px; border-radius: 8px; border: 1px solid ${isSelected ? 'var(--color-gold)' : '#E2E8F0'}; background: ${isSelected ? '#FFF7ED' : '#FFFFFF'}; color: ${isSelected ? 'var(--color-primary)' : '#0F172A'}; font-weight: ${isSelected ? '800' : '600'}; font-size: 0.92rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;">
           <span>${b.label}</span>
-          ${isSelected ? '<span style="color:#10B981; font-size:0.85rem; font-weight:700;">✓ Active</span>' : ''}
+          ${isSelected ? '<span style="color:#059669; font-size:0.85rem; font-weight:700;">✓ Active</span>' : ''}
         </button>
       `;
     });
   });
 
   modal.innerHTML = `
-    <div style="background: #1E293B; border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 16px; width: 100%; max-width: 480px; max-height: 90vh; display: flex; flex-direction: column; padding: 24px; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
+    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; width: 100%; max-width: 480px; max-height: 90vh; display: flex; flex-direction: column; padding: 24px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.16);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h3 style="color: #F8FAFC; font-size: 1.15rem; font-family: var(--font-heading); margin: 0; display: flex; align-items: center; gap: 8px;">
+        <h3 style="color: #0F172A; font-size: 1.15rem; font-family: var(--font-heading); margin: 0; display: flex; align-items: center; gap: 8px;">
           <span>🏢</span> Switch Branch
         </h3>
-        <button onclick="closeSwitchBranchModal()" style="background: rgba(255,255,255,0.08); border: none; border-radius: 50%; width: 28px; height: 28px; color: #94A3B8; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+        <button onclick="closeSwitchBranchModal()" style="background: #F1F5F9; border: none; border-radius: 50%; width: 28px; height: 28px; color: #64748B; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
       </div>
-      <p style="color: #94A3B8; font-size: 0.82rem; margin-bottom: 12px;">Select which branch orders and kitchen pipeline to manage:</p>
+      <p style="color: #64748B; font-size: 0.82rem; margin-bottom: 12px;">Select which branch orders and kitchen pipeline to manage:</p>
       
       <div style="margin-bottom: 12px;">
         <input 
@@ -239,7 +239,7 @@ function promptSwitchBranch() {
           type="text" 
           placeholder="🔍 Search branches (e.g. Kukatpally, Vizag)..." 
           oninput="filterBranchModalList(this.value)"
-          style="width: 100%; padding: 10px 14px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; color: #FFF; font-size: 0.88rem; outline: none;" 
+          style="width: 100%; padding: 10px 14px; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; color: #0F172A; font-size: 0.88rem; outline: none;" 
         />
       </div>
 
@@ -247,8 +247,8 @@ function promptSwitchBranch() {
         ${listHtml}
       </div>
 
-      <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 10px;">
-        <button onclick="closeSwitchBranchModal()" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #CBD5E1; cursor: pointer; font-size: 0.85rem; font-weight: 600;">Cancel</button>
+      <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #E2E8F0; display: flex; gap: 10px;">
+        <button onclick="closeSwitchBranchModal()" class="btn btn-secondary btn-sm" style="flex: 1;">Cancel</button>
       </div>
     </div>
   `;
@@ -338,8 +338,183 @@ function updateProfileUI(user) {
       : 'Hotel Administrator';
   }
 
+  bindOwnerProfileClick();
   renderActiveBranchBadge();
 }
+
+function bindOwnerProfileClick() {
+  const profileContainer = document.querySelector('.owner-profile');
+  if (profileContainer) {
+    profileContainer.style.cursor = 'pointer';
+    profileContainer.setAttribute('title', 'Click to view Owner Profile Details');
+    profileContainer.onclick = (e) => {
+      e.preventDefault();
+      openOwnerProfileModal();
+    };
+  }
+}
+
+// Ensure binding also on initial load
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindOwnerProfileClick);
+  } else {
+    bindOwnerProfileClick();
+  }
+}
+
+// Open Owner Profile Details Modal
+function openOwnerProfileModal() {
+  let modal = document.getElementById('owner-profile-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'owner-profile-modal';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+
+  let user = null;
+  try {
+    const raw = sessionStorage.getItem('sgh_owner_user') || localStorage.getItem('sgh_owner_user');
+    if (raw) user = JSON.parse(raw);
+  } catch (e) {}
+
+  const activeBranch = getActiveBranch() || (user && user.branch) || 'KPHB Colony';
+  const ownerName = (user && user.name) || 'G. Subbayya';
+  const ownerEmail = (user && user.email) || 'myakalanagarjun09@gmail.com';
+  const ownerPhone = (user && user.phone) || '+91 9121792433';
+  const avatarLetter = (ownerName || 'G').charAt(0).toUpperCase();
+  const ownerRole = (user && user.role === 'owner') ? 'Founder & Hotel Owner' : 'Hotel Administrator';
+  const tier = (user && user.tier) || 'Heritage Gold Owner';
+
+  modal.innerHTML = `
+    <div class="modal-card profile-modal-card" style="position: relative;" onclick="event.stopPropagation()">
+      <!-- TOP BANNER -->
+      <div class="profile-modal-banner">
+        <div class="profile-modal-avatar">${avatarLetter}</div>
+        <div class="profile-modal-header-info">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <h2 class="profile-modal-name">${ownerName}</h2>
+            <span class="profile-badge-gold">👑 ${tier}</span>
+          </div>
+          <div class="profile-modal-tagline">${ownerRole}</div>
+          <div style="font-size: 0.74rem; color: #64748B; margin-top: 3px;">
+            Subbayya Gari Hotel • Estd. 1950, Kakinada
+          </div>
+        </div>
+        <button onclick="closeOwnerProfileModal()" class="modal-close-btn" style="position: absolute; top: 12px; right: 14px;" title="Close">✕</button>
+      </div>
+
+      <!-- BODY DETAILS -->
+      <div class="profile-modal-body">
+        <div style="margin-bottom: 14px; font-size: 0.76rem; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.05em;">
+          Owner & Account Credentials
+        </div>
+
+        <div class="profile-details-grid">
+          <div class="profile-detail-item">
+            <div class="profile-detail-label">
+              <span>📧</span>
+              <span>Official Email</span>
+            </div>
+            <div class="profile-detail-value" style="font-size: 0.8rem; word-break: break-all;">${ownerEmail}</div>
+          </div>
+
+          <div class="profile-detail-item">
+            <div class="profile-detail-label">
+              <span>📞</span>
+              <span>Direct Phone</span>
+            </div>
+            <div class="profile-detail-value">${ownerPhone}</div>
+          </div>
+
+          <div class="profile-detail-item">
+            <div class="profile-detail-label">
+              <span>📍</span>
+              <span>Operating Branch</span>
+            </div>
+            <div class="profile-detail-value" style="color: var(--color-primary);">${activeBranch}</div>
+          </div>
+
+          <div class="profile-detail-item">
+            <div class="profile-detail-label">
+              <span>🛡️</span>
+              <span>Privilege Level</span>
+            </div>
+            <div class="profile-detail-value" style="color: #059669;">Super Admin / Full Access</div>
+          </div>
+
+          <div class="profile-detail-item">
+            <div class="profile-detail-label">
+              <span>🏢</span>
+              <span>Hospitality Network</span>
+            </div>
+            <div class="profile-detail-value">23 Outlets & Cloud Kitchens</div>
+          </div>
+
+          <div class="profile-detail-item">
+            <div class="profile-detail-label">
+              <span>⚡</span>
+              <span>Portal Status</span>
+            </div>
+            <div class="profile-detail-value" style="color: #059669; display: flex; align-items: center; gap: 6px;">
+              <span class="pulse-dot" style="display: inline-block;"></span>
+              <span>Active & Synchronized</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- QUICK BRANCH SWITCH CALLOUT -->
+        <div style="background: #FFF7ED; border: 1px solid #FED7AA; border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <div>
+            <div style="font-size: 0.82rem; font-weight: 800; color: var(--color-primary);">Currently managing: ${activeBranch}</div>
+            <div style="font-size: 0.72rem; color: #78350F; margin-top: 2px;">Switch orders, kitchen routing, and reports to any branch</div>
+          </div>
+          <button onclick="closeOwnerProfileModal(); openSwitchBranchModal();" class="btn btn-primary btn-sm" style="white-space: nowrap;">
+            🏢 Change Branch
+          </button>
+        </div>
+
+        <!-- MODAL FOOTER ACTIONS -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid #E2E8F0; padding-top: 16px;">
+          <a href="settings.html" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+            ⚙️ Hotel Settings
+          </a>
+          <div style="display: flex; gap: 8px;">
+            <button onclick="closeOwnerProfileModal()" class="btn btn-secondary btn-sm">
+              Close
+            </button>
+            <button onclick="logoutOwner()" class="btn btn-danger btn-sm" title="Sign out of Owner Portal">
+              🚪 Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  modal.classList.add('active');
+
+  modal.onclick = (e) => {
+    if (e.target === modal) closeOwnerProfileModal();
+  };
+
+  document.removeEventListener('keydown', handleProfileModalEscape);
+  document.addEventListener('keydown', handleProfileModalEscape);
+}
+
+function closeOwnerProfileModal() {
+  const modal = document.getElementById('owner-profile-modal');
+  if (modal) modal.classList.remove('active');
+  document.removeEventListener('keydown', handleProfileModalEscape);
+}
+
+function handleProfileModalEscape(e) {
+  if (e.key === 'Escape') closeOwnerProfileModal();
+}
+
+window.openOwnerProfileModal = openOwnerProfileModal;
+window.closeOwnerProfileModal = closeOwnerProfileModal;
 
 // Owner Logout
 function logoutOwner() {

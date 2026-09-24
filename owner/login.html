@@ -15,17 +15,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle at top right, #1E293B, #0F172A);
+      background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 50%, #FFF7ED 100%);
       padding: 20px;
     }
     .login-card {
       width: 100%;
       max-width: 440px;
-      background: #1E293B;
+      background: #FFFFFF;
       border: 1px solid var(--color-card-border);
       border-radius: var(--radius-lg);
       padding: 36px 32px;
-      box-shadow: var(--shadow-lg), 0 0 25px rgba(245, 158, 11, 0.15);
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08), 0 0 25px rgba(245, 158, 11, 0.08);
     }
     .login-brand {
       text-align: center;
@@ -40,7 +40,7 @@
       align-items: center;
       justify-content: center;
       padding: 6px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
       margin-bottom: 12px;
       overflow: hidden;
     }
@@ -50,8 +50,8 @@
       object-fit: contain;
     }
     .demo-credentials {
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px dashed rgba(245, 158, 11, 0.4);
+      background: #FFFBEB;
+      border: 1px dashed #F59E0B;
       border-radius: var(--radius-md);
       padding: 12px;
       margin-top: 20px;
@@ -78,36 +78,36 @@
         <div class="form-group">
           <label class="form-label" for="login-branch">Select Hotel Branch</label>
           <div style="position: relative;">
-            <select id="login-branch" class="form-control" required style="cursor: pointer; font-weight: 600; appearance: none; -webkit-appearance: none; padding-right: 36px; background-color: rgba(15, 23, 42, 0.8); color: var(--color-gold); border: 1px solid rgba(245, 158, 11, 0.4); background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23F59E0B%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 14px center; background-size: 11px auto;">
+            <select id="login-branch" class="form-control" required style="cursor: pointer; font-weight: 600; appearance: none; -webkit-appearance: none; padding-right: 36px; background-color: #FFFFFF; color: #0F172A; border: 1px solid #CBD5E1; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23C2410C%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 14px center; background-size: 11px auto;">
               <option value="" disabled selected>-- Choose Branch Location --</option>
-              <option value="All Branches" style="background:#0F172A; color:#F59E0B; font-weight:700;">🌐 All Branches (Master View)</option>
-              <optgroup label="Hyderabad & Telangana" style="background:#0F172A; color:#F59E0B; font-weight:700;">
-                <option value="KPHB Colony" style="color:#FFF;">📍 KPHB Colony Branch</option>
-                <option value="Kukatpally" style="color:#FFF;">📍 Kukatpally Branch</option>
-                <option value="Vanasthalipuram" style="color:#FFF;">📍 Vanasthalipuram Branch</option>
-                <option value="Ameerpet" style="color:#FFF;">📍 Ameerpet Branch</option>
-                <option value="Madhapur" style="color:#FFF;">📍 Madhapur Branch</option>
-                <option value="Kondapur" style="color:#FFF;">📍 Kondapur Branch</option>
-                <option value="Gachibowli" style="color:#FFF;">📍 Gachibowli Branch</option>
-                <option value="Dilsukhnagar" style="color:#FFF;">📍 Dilsukhnagar Branch</option>
-                <option value="Secunderabad" style="color:#FFF;">📍 Secunderabad Branch</option>
-                <option value="Attapur" style="color:#FFF;">📍 Attapur Branch</option>
-                <option value="Chanda Nagar" style="color:#FFF;">📍 Chanda Nagar Branch</option>
-                <option value="AS Rao Nagar" style="color:#FFF;">📍 AS Rao Nagar Branch</option>
-                <option value="Warangal" style="color:#FFF;">📍 Warangal Branch</option>
+              <option value="All Branches" style="background:#FFFFFF; color:#C2410C; font-weight:700;">🌐 All Branches (Master View)</option>
+              <optgroup label="Hyderabad & Telangana" style="background:#FFFFFF; color:#C2410C; font-weight:700;">
+                <option value="KPHB Colony" style="color:#0F172A;">📍 KPHB Colony Branch</option>
+                <option value="Kukatpally" style="color:#0F172A;">📍 Kukatpally Branch</option>
+                <option value="Vanasthalipuram" style="color:#0F172A;">📍 Vanasthalipuram Branch</option>
+                <option value="Ameerpet" style="color:#0F172A;">📍 Ameerpet Branch</option>
+                <option value="Madhapur" style="color:#0F172A;">📍 Madhapur Branch</option>
+                <option value="Kondapur" style="color:#0F172A;">📍 Kondapur Branch</option>
+                <option value="Gachibowli" style="color:#0F172A;">📍 Gachibowli Branch</option>
+                <option value="Dilsukhnagar" style="color:#0F172A;">📍 Dilsukhnagar Branch</option>
+                <option value="Secunderabad" style="color:#0F172A;">📍 Secunderabad Branch</option>
+                <option value="Attapur" style="color:#0F172A;">📍 Attapur Branch</option>
+                <option value="Chanda Nagar" style="color:#0F172A;">📍 Chanda Nagar Branch</option>
+                <option value="AS Rao Nagar" style="color:#0F172A;">📍 AS Rao Nagar Branch</option>
+                <option value="Warangal" style="color:#0F172A;">📍 Warangal Branch</option>
               </optgroup>
-              <optgroup label="Andhra Pradesh" style="background:#0F172A; color:#F59E0B; font-weight:700;">
-                <option value="Kakinada (Main)" style="color:#FFF;">📍 Kakinada (Main Flagship)</option>
-                <option value="Rajahmundry" style="color:#FFF;">📍 Rajahmundry Branch</option>
-                <option value="Vijayawada" style="color:#FFF;">📍 Vijayawada Branch</option>
-                <option value="Visakhapatnam" style="color:#FFF;">📍 Visakhapatnam (Vizag) Branch</option>
-                <option value="Guntur" style="color:#FFF;">📍 Guntur Branch</option>
-                <option value="Tirupati" style="color:#FFF;">📍 Tirupati Branch</option>
-                <option value="Nellore" style="color:#FFF;">📍 Nellore Branch</option>
-                <option value="Eluru" style="color:#FFF;">📍 Eluru Branch</option>
+              <optgroup label="Andhra Pradesh" style="background:#FFFFFF; color:#C2410C; font-weight:700;">
+                <option value="Kakinada (Main)" style="color:#0F172A;">📍 Kakinada (Main Flagship)</option>
+                <option value="Rajahmundry" style="color:#0F172A;">📍 Rajahmundry Branch</option>
+                <option value="Vijayawada" style="color:#0F172A;">📍 Vijayawada Branch</option>
+                <option value="Visakhapatnam" style="color:#0F172A;">📍 Visakhapatnam (Vizag) Branch</option>
+                <option value="Guntur" style="color:#0F172A;">📍 Guntur Branch</option>
+                <option value="Tirupati" style="color:#0F172A;">📍 Tirupati Branch</option>
+                <option value="Nellore" style="color:#0F172A;">📍 Nellore Branch</option>
+                <option value="Eluru" style="color:#0F172A;">📍 Eluru Branch</option>
               </optgroup>
-              <optgroup label="Karnataka" style="background:#0F172A; color:#F59E0B; font-weight:700;">
-                <option value="Bengaluru" style="color:#FFF;">📍 Bengaluru Branch</option>
+              <optgroup label="Karnataka" style="background:#FFFFFF; color:#C2410C; font-weight:700;">
+                <option value="Bengaluru" style="color:#0F172A;">📍 Bengaluru Branch</option>
               </optgroup>
             </select>
           </div>
@@ -135,7 +135,7 @@
         <div><strong>Email:</strong> myakalanagarjun09@gmail.com</div>
         <div><strong>Phone:</strong> 9121792433</div>
         <div><strong>Password:</strong> 123456</div>
-        <div style="margin-top: 4px; font-size: 0.72rem; color: #34D399;">💡 Select any branch above (Kukatpally, KPHB, or Vanasthalipuram)</div>
+        <div style="margin-top: 4px; font-size: 0.72rem; color: #059669; font-weight: 600;">💡 Select any branch above (Kukatpally, KPHB, or Vanasthalipuram)</div>
       </div>
 
       <div style="text-align: center; margin-top: 24px;">

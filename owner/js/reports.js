@@ -90,21 +90,21 @@ function renderReportsChart(timeline) {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          labels: { color: '#94A3B8', font: { family: "'Plus Jakarta Sans', sans-serif" } },
+          labels: { color: '#64748B', font: { family: "'Plus Jakarta Sans', sans-serif" } },
         },
       },
       scales: {
         x: {
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#94A3B8' },
+          grid: { color: 'rgba(0, 0, 0, 0.05)' },
+          ticks: { color: '#64748B' },
         },
         y: {
           type: 'linear',
           display: true,
           position: 'left',
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          grid: { color: 'rgba(0, 0, 0, 0.05)' },
           ticks: {
-            color: '#94A3B8',
+            color: '#64748B',
             callback: (v) => '₹' + v,
           },
         },
