@@ -30,40 +30,11 @@ const ALL_HOTEL_BRANCHES = [
     ]
   },
   {
-    category: 'Hyderabad & Telangana',
+    category: 'Customer Site Active Branches',
     branches: [
       { name: 'KPHB Colony', label: '📍 KPHB Colony Branch' },
       { name: 'Kukatpally', label: '📍 Kukatpally Branch' },
-      { name: 'Vanasthalipuram', label: '📍 Vanasthalipuram Branch' },
-      { name: 'Ameerpet', label: '📍 Ameerpet Branch' },
-      { name: 'Madhapur', label: '📍 Madhapur Branch' },
-      { name: 'Kondapur', label: '📍 Kondapur Branch' },
-      { name: 'Gachibowli', label: '📍 Gachibowli Branch' },
-      { name: 'Dilsukhnagar', label: '📍 Dilsukhnagar Branch' },
-      { name: 'Secunderabad', label: '📍 Secunderabad Branch' },
-      { name: 'Attapur', label: '📍 Attapur Branch' },
-      { name: 'Chanda Nagar', label: '📍 Chanda Nagar Branch' },
-      { name: 'AS Rao Nagar', label: '📍 AS Rao Nagar Branch' },
-      { name: 'Warangal', label: '📍 Warangal Branch' }
-    ]
-  },
-  {
-    category: 'Andhra Pradesh',
-    branches: [
-      { name: 'Kakinada (Main)', label: '📍 Kakinada (Main Flagship)' },
-      { name: 'Rajahmundry', label: '📍 Rajahmundry Branch' },
-      { name: 'Vijayawada', label: '📍 Vijayawada Branch' },
-      { name: 'Visakhapatnam', label: '📍 Visakhapatnam (Vizag) Branch' },
-      { name: 'Guntur', label: '📍 Guntur Branch' },
-      { name: 'Tirupati', label: '📍 Tirupati Branch' },
-      { name: 'Nellore', label: '📍 Nellore Branch' },
-      { name: 'Eluru', label: '📍 Eluru Branch' }
-    ]
-  },
-  {
-    category: 'Karnataka',
-    branches: [
-      { name: 'Bengaluru', label: '📍 Bengaluru Branch' }
+      { name: 'Vanasthalipuram', label: '📍 Vanasthalipuram Branch' }
     ]
   }
 ];
